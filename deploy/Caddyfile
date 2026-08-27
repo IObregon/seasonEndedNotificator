@@ -1,0 +1,11 @@
+{$APP_DOMAIN:season-ended.localhost} {
+    tls internal
+
+    handle /health/* {
+        reverse_proxy api:8080
+    }
+
+    handle {
+        reverse_proxy web:8080
+    }
+}

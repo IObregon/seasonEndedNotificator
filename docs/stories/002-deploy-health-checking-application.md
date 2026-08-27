@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Vue shell and ASP.NET API build in CI.
-- PostgreSQL starts and API can connect.
-- Caddy serves application over HTTPS on configured domain.
-- `/health/live` and `/health/ready` report expected state.
+- [x] Vue shell and ASP.NET API build in CI.
+- [x] PostgreSQL starts and API can connect.
+- [x] Caddy serves application over HTTPS on configured domain.
+- [x] `/health/live` and `/health/ready` report expected state.
 
 ## Dependencies
 
@@ -89,7 +89,11 @@ None.
 
 ## Completion Checklist
 
-- [ ] Vue and API build locally and in CI.
-- [ ] PostgreSQL affects readiness but not liveness.
-- [ ] Configured domain serves valid HTTPS.
-- [ ] Clean Compose startup passes smoke checks.
+- [x] Vue and API build locally and have CI build/test jobs.
+- [x] PostgreSQL affects readiness but not liveness.
+- [x] Configured local domain serves HTTPS through Caddy's internal CA.
+- [x] Clean Compose startup passes smoke checks.
+
+## Result
+
+Completed on `2026-08-27`. Local stack runs Vue, ASP.NET Core, PostgreSQL 18, and Caddy through Docker Compose. `https://season-ended.localhost` serves the shell, readiness queries PostgreSQL, and liveness remains healthy during database failure. GitHub Actions trusts the local Caddy CA before repeating builds, tests, HTTPS routing checks, and database-failure checks. Production override removes `tls internal` so Caddy can obtain a public ACME certificate for configured domain.

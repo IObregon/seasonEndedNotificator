@@ -1,0 +1,4 @@
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.production:/etc/caddy/Caddyfile:ro

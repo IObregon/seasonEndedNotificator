@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/SeasonEnded.Web/package-lock.json
+      - run: dotnet test SeasonEnded.sln --configuration Release
+      - run: npm ci
+        working-directory: src/SeasonEnded.Web
+      - run: npm test
+        working-directory: src/SeasonEnded.Web
+      - run: npm run build
+        working-directory: src/SeasonEnded.Web
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start stack
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        run: docker compose -f deploy/compose.yml up --build --wait
+      - name: Verify HTTPS routes
+        run: |
+          docker compose -f deploy/compose.yml cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+          sudo cp ./caddy-root.crt /usr/local/share/ca-certificates/season-ended-caddy.crt
+          sudo update-ca-certificates
+          curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/
+          test "$(curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "Healthy"
+          test "$(curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "Healthy"
+      - name: Verify readiness depends on PostgreSQL
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        run: |
+          docker compose -f deploy/compose.yml stop postgres
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "503"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "200"
+      - name: Print logs
+        if: failure()
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        run: docker compose -f deploy/compose.yml logs
+      - name: Stop stack
+        if: always()
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        run: docker compose -f deploy/compose.yml down --volumes
