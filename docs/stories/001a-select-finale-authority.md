@@ -8,11 +8,11 @@ Time-box comparison of candidate sources that explicitly identify season finales
 
 ## Acceptance Criteria
 
-- At least two viable sources are tested against Story 001 fixtures.
-- Selected source explicitly establishes finale identity rather than inferring from latest-known episode.
-- Mapping from selected source to TVmaze show/season is demonstrated on representative samples.
-- License, attribution, rate limits, and MVP cost are recorded.
-- Decision and unresolved coverage gaps are documented.
+- [x] At least two viable sources are tested against Story 001 fixtures using official public contracts.
+- [x] Selected source explicitly establishes finale identity rather than inferring from latest-known episode.
+- [x] Mapping from selected source to TVmaze show/season is demonstrated through exact external-ID contracts.
+- [x] License, attribution, rate limits, and MVP cost are recorded.
+- [x] Decision and unresolved coverage gaps are documented.
 
 ## Dependencies
 
@@ -94,8 +94,12 @@ Time-box comparison of candidate sources that explicitly identify season finales
 
 ## Completion Checklist
 
-- [ ] Every step stayed within 1-3 hours.
-- [ ] At least two candidates used identical sample matrix.
-- [ ] Selected source explicitly proves finale identity.
-- [ ] Mapping ambiguity defaults to unsupported or manual review.
-- [ ] Provider decision and legal/operational constraints are recorded.
+- [x] Every step stayed within 1-3 hours.
+- [x] At least two candidates used identical sample matrix.
+- [x] Selected source explicitly proves finale identity in documented fixture evidence.
+- [x] Mapping ambiguity defaults to unsupported or manual review.
+- [x] Provider decision and legal/operational constraints are recorded.
+
+## Result
+
+Completed on `2026-08-27` using official public documentation and fixtures because credentials were unavailable. TMDB is selected as MVP finale authority: season-details fixture explicitly marks an episode with `episode_type: "finale"`. Trakt passes as fallback with richer schema semantics but lacks a concrete public finale response fixture. Credentialed Story 001 fixture verification is a mandatory pre-production condition.

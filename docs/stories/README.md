@@ -5,7 +5,7 @@ Each linked file is one deployable, testable slice intended to take less than 2-
 ## Discovery and foundation
 
 1. [Validate TVmaze finale data](001-validate-tvmaze-finale-data.md)
-2. [Select a finale authority](001a-select-finale-authority.md)
+2. [Select a finale authority](001a-select-finale-authority.md) - TMDB selected; credentialed verification required before production
 3. [Deploy a health-checking application](002-deploy-health-checking-application.md)
 4. [Capture a local email](003-capture-local-email.md)
 
