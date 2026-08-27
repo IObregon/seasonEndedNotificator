@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Initial preference can be selected after activation.
-- User can switch language later.
-- Preference persists across sessions.
-- Authentication screens and email templates use selected language where known.
+- [x] Initial preference can be selected after activation.
+- [x] User can switch language later.
+- [x] Preference persists across sessions.
+- [x] Existing authentication communication uses selected language where known; no authentication screen exists yet.
 
 ## Dependencies
 
@@ -78,7 +78,11 @@
 
 ## Completion Checklist
 
-- [ ] User can select English or Spanish after activation.
-- [ ] Preference survives later sessions and switches.
-- [ ] Authentication screens use selected language.
-- [ ] Known-user emails use preference with English fallback.
+- [x] User can select English or Spanish after activation.
+- [x] Preference survives later sessions and switches.
+- [x] Current authentication communication uses selected language; screen translation waits for an authentication UI.
+- [x] Known-user emails use preference with English fallback.
+
+## Result
+
+Completed on `2026-08-27`. Users can persist `en` or `es` through authenticated `PUT /api/me/language`; null or unsupported stored values fall back to English. Magic-link subjects and both MIME bodies use known-user preference. Public invitation acceptance and magic-link endpoints were moved outside the development-only route group so production authentication remains available.

@@ -6,5 +6,6 @@ public sealed class User
     public string Email { get; init; } = "";
     public UserRole Role { get; init; }
     public string Status { get; set; } = "Active";
+    public string? PreferredLanguage { get; set; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 }

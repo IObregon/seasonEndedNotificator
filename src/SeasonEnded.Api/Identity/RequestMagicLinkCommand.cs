@@ -31,12 +31,11 @@ public sealed class RequestMagicLinkCommand(AppDbContext context, IEmailSender e
         });
         await context.SaveChangesAsync();
 
-        await emailSender.SendAsync(new EmailMessage(
-            normalized,
-            "Sign in to Season Ended",
-            $"Click here to sign in: {rawToken}",
-            $"<p>Click here to sign in: <code>{rawToken}</code></p>"),
-            CancellationToken.None);
+        var message = AuthenticationMessages.MagicLink(user.PreferredLanguage, rawToken) with
+        {
+            To = normalized
+        };
+        await emailSender.SendAsync(message, CancellationToken.None);
 
         return new MagicLinkRequestResult(RawToken: rawToken);
     }

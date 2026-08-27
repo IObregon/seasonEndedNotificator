@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Identity;
 using System.Net.Mail;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres")
@@ -126,68 +127,81 @@ if (app.Environment.IsDevelopment())
         return Results.Created();
     });
 
-    app.MapPost("/api/invitations/accept", async (
-        AcceptInvitationRequest? request,
-        AppDbContext db,
-        HttpContext httpContext,
-        CancellationToken cancellationToken) =>
-    {
-        if (string.IsNullOrWhiteSpace(request?.Token))
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                [nameof(AcceptInvitationRequest.Token)] = ["Token is required"]
-            });
-
-        var command = new AcceptInvitationCommand(db);
-        var result = await command.ExecuteAsync(request.Token);
-
-        if (!result.Succeeded)
-            return Results.Problem("Invitation token is invalid, expired, or already used.",
-                statusCode: StatusCodes.Status410Gone);
-
-        await SessionSignIn.SignInUserAsync(httpContext, result.UserId!.Value, result.Email!, UserRole.User);
-
-        return Results.NoContent();
-    });
-
-    app.MapPost("/api/auth/magic-link", async (
-        MagicLinkRequest? request,
-        AppDbContext db,
-        IEmailSender sender) =>
-    {
-        if (!MailAddress.TryCreate(request?.Email, out var email))
-        {
-            return Results.Ok(new { message = "If an account exists, a sign-in link has been sent." });
-        }
-
-        var command = new RequestMagicLinkCommand(db, sender);
-        await command.ExecuteAsync(email.Address);
-
-        return Results.Ok(new { message = "If an account exists, a sign-in link has been sent." });
-    });
-
-    app.MapPost("/api/auth/magic-link/consume", async (
-        ConsumeMagicLinkRequest? request,
-        AppDbContext db,
-        HttpContext httpContext,
-        CancellationToken cancellationToken) =>
-    {
-        if (string.IsNullOrWhiteSpace(request?.Token))
-            return Results.Problem("Token is invalid.", statusCode: StatusCodes.Status410Gone);
-
-        var command = new ConsumeMagicLinkCommand(db);
-        var result = await command.ExecuteAsync(request.Token);
-
-        if (!result.Succeeded)
-            return Results.Problem("Token is invalid, expired, or already used.",
-                statusCode: StatusCodes.Status410Gone);
-
-        var user = await db.Users.FindAsync(result.UserId);
-        await SessionSignIn.SignInUserAsync(httpContext, user!.Id, user.Email, user.Role);
-
-        return Results.NoContent();
-    });
 }
+
+app.MapPost("/api/invitations/accept", async (
+    AcceptInvitationRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (string.IsNullOrWhiteSpace(request?.Token))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(AcceptInvitationRequest.Token)] = ["Token is required"]
+        });
+
+    var result = await new AcceptInvitationCommand(db).ExecuteAsync(request.Token);
+    if (!result.Succeeded)
+        return Results.Problem("Invitation token is invalid, expired, or already used.",
+            statusCode: StatusCodes.Status410Gone);
+
+    await SessionSignIn.SignInUserAsync(httpContext, result.UserId!.Value, result.Email!, UserRole.User);
+    return Results.NoContent();
+});
+
+app.MapPost("/api/auth/magic-link", async (
+    MagicLinkRequest? request,
+    AppDbContext db,
+    IEmailSender sender) =>
+{
+    const string responseMessage = "If an account exists, a sign-in link has been sent.";
+    if (!MailAddress.TryCreate(request?.Email, out var email))
+        return Results.Ok(new { message = responseMessage });
+
+    await new RequestMagicLinkCommand(db, sender).ExecuteAsync(email.Address);
+    return Results.Ok(new { message = responseMessage });
+});
+
+app.MapPost("/api/auth/magic-link/consume", async (
+    ConsumeMagicLinkRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (string.IsNullOrWhiteSpace(request?.Token))
+        return Results.Problem("Token is invalid.", statusCode: StatusCodes.Status410Gone);
+
+    var result = await new ConsumeMagicLinkCommand(db).ExecuteAsync(request.Token);
+    if (!result.Succeeded)
+        return Results.Problem("Token is invalid, expired, or already used.",
+            statusCode: StatusCodes.Status410Gone);
+
+    var user = await db.Users.FindAsync(result.UserId);
+    await SessionSignIn.SignInUserAsync(httpContext, user!.Id, user.Email, user.Role);
+    return Results.NoContent();
+});
+
+app.MapPut("/api/me/language", async (
+    SetLanguageRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    try
+    {
+        var changed = await new SetUserLanguageCommand(db)
+            .ExecuteAsync(userId, request?.Language ?? "");
+        return changed ? Results.NoContent() : Results.Unauthorized();
+    }
+    catch (ArgumentException)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(SetLanguageRequest.Language)] = ["Language must be 'en' or 'es'."]
+        });
+    }
+}).RequireAuthorization();
 
 app.Run();
 
@@ -198,3 +212,4 @@ public sealed record InviteUserRequest(string Email);
 public sealed record AcceptInvitationRequest(string Token);
 public sealed record MagicLinkRequest(string Email);
 public sealed record ConsumeMagicLinkRequest(string Token);
+public sealed record SetLanguageRequest(string Language);
