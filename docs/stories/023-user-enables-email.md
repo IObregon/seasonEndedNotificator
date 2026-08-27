@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Settings display current email preference.
-- User can toggle email independently.
-- Preference persists across sessions.
-- Disabled email channel creates no new email delivery.
+- [x] Settings display current email preference.
+- [x] User can toggle email independently.
+- [x] Preference persists across sessions.
+- [x] Disabled email channel is excluded from new email recipient selection.
 
 ## Dependencies
 
@@ -83,6 +83,10 @@
 
 ## Completion Checklist
 
-- [ ] Preference persists and remains independent of other channels.
-- [ ] Authenticated users can change only their own setting.
-- [ ] Disabled users produce no new email delivery.
+- [x] Preference persists and remains independent of other channels.
+- [x] Authenticated users can change only their own setting.
+- [x] Disabled users produce no new email recipient selection.
+
+## Result
+
+Completed on `2026-08-27`. Nullable email preference preserves existing behavior by defaulting enabled. Authenticated GET/PUT endpoints read and update only the current user. Vue settings toggle loads persisted state, saves independently, and reloads after failure. `EmailRecipientQuery` includes active enabled/defaulted users and excludes explicit opt-outs before future delivery creation.

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import ShowSearch from './components/ShowSearch.vue'
 import ShowDetails from './components/ShowDetails.vue'
+import NotificationSettings from './components/NotificationSettings.vue'
 
 type ShowDetailsData = {
   providerId: number
@@ -77,5 +78,6 @@ async function unfollow(providerId: number) {
         </li>
       </ul>
     </section>
+    <NotificationSettings />
   </main>
 </template>

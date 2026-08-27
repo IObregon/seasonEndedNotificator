@@ -7,5 +7,6 @@ public sealed class User
     public UserRole Role { get; set; }
     public string Status { get; set; } = "Active";
     public string? PreferredLanguage { get; set; }
+    public bool? EmailNotificationsEnabled { get; set; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 }

@@ -7,6 +7,7 @@ using System.Data;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Jobs;
+using SeasonEnded.Api.Notifications;
 using System.Net.Mail;
 using System.Security.Claims;
 
@@ -450,6 +451,31 @@ app.MapGet("/api/admin/metadata/issues", async (AppDbContext db) =>
     return Results.Ok(issues);
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapGet("/api/notification-preferences", async (
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var enabled = await new EmailPreferenceService(db).IsEnabledAsync(userId);
+    return Results.Ok(new EmailPreferenceResponse(enabled));
+}).RequireAuthorization();
+
+app.MapPut("/api/notification-preferences", async (
+    EmailPreferenceRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+    if (request is null)
+        return Results.BadRequest();
+
+    var changed = await new EmailPreferenceService(db).SetAsync(userId, request.EmailEnabled);
+    return changed ? Results.NoContent() : Results.Unauthorized();
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;
@@ -486,3 +512,5 @@ public sealed record MetadataIssueResponse(
     string Title,
     int SeasonNumber,
     string Reason);
+public sealed record EmailPreferenceResponse(bool EmailEnabled);
+public sealed record EmailPreferenceRequest(bool EmailEnabled);
