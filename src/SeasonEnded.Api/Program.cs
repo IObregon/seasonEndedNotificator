@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +22,19 @@ builder.Services
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.LoginPath = "/api/auth/magic-link";
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var policy = context.HttpContext.RequestServices.GetRequiredService<ActiveUserPolicy>();
+            if (!Guid.TryParse(idValue, out var userId) || !await policy.CanUseSessionAsync(userId))
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync();
+            }
+        };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<ActiveUserPolicy>();
 
 builder.Services
     .AddHealthChecks()
@@ -202,6 +214,25 @@ app.MapPut("/api/me/language", async (
         });
     }
 }).RequireAuthorization();
+
+app.MapPost("/api/admin/users/{targetId:guid}/disable", async (
+    Guid targetId,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var callerId))
+        return Results.Unauthorized();
+
+    var result = await new DisableUserCommand(db).ExecuteAsync(callerId, targetId);
+    return result switch
+    {
+        DisableUserResult.Disabled => Results.NoContent(),
+        DisableUserResult.SelfDisableRejected => Results.Conflict(new { message = "Administrators cannot disable themselves." }),
+        DisableUserResult.AlreadyDisabled => Results.Conflict(new { message = "User is already disabled." }),
+        DisableUserResult.NotFound => Results.NotFound(),
+        _ => Results.Forbid()
+    };
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
 app.Run();
 

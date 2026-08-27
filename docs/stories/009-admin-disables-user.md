@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Admin can disable an active non-self account.
-- Existing sessions cease working.
-- Disabled user cannot request usable magic links.
-- Notification eligibility excludes disabled user.
+- [x] Admin can disable an active non-self account.
+- [x] Existing sessions cease working.
+- [x] Disabled user cannot request usable magic links.
+- [x] Notification eligibility excludes disabled user.
 
 ## Dependencies
 
@@ -77,7 +77,11 @@
 
 ## Completion Checklist
 
-- [ ] Admin can disable an active non-self account.
-- [ ] Existing sessions fail immediately.
-- [ ] New and previously issued magic links cannot authenticate.
-- [ ] Disabled users are ineligible for notifications.
+- [x] Admin can disable an active non-self account.
+- [x] Existing sessions fail immediately.
+- [x] New and previously issued magic links cannot authenticate.
+- [x] Disabled users are ineligible for notifications.
+
+## Result
+
+Completed on `2026-08-27`. Role-protected admin endpoint disables active non-self users with explicit conflict outcomes. Cookie principal validation checks current database status on every request, invalidating existing sessions immediately. Magic-link request and consumption require active status, and `ActiveUserPolicy` provides shared notification-recipient filtering.
