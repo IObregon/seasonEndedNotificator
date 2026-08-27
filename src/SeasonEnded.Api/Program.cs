@@ -378,6 +378,21 @@ app.MapPost("/api/shows/{providerId:int}/follow", async (
     return Results.Ok(new { followedAt = result.Follow.FollowedAt, created = result.Created });
 }).RequireAuthorization();
 
+app.MapDelete("/api/shows/{providerId:int}/follow", async (
+    int providerId,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var show = await db.Shows.FirstOrDefaultAsync(item => item.ProviderId == providerId);
+    if (show is not null)
+        await new UnfollowShowCommand(db).ExecuteAsync(userId, show.Id);
+
+    return Results.NoContent();
+}).RequireAuthorization();
+
 app.MapGet("/api/follows", async (
     AppDbContext db,
     HttpContext httpContext) =>

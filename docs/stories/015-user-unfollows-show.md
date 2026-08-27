@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Active follow can be removed from dashboard.
-- Unfollow does not delete show metadata or past delivery history.
-- Re-follow records a new eligibility timestamp.
-- Operation is idempotent.
+- [x] Active follow can be removed from dashboard.
+- [x] Unfollow does not delete show metadata or past delivery history.
+- [x] Re-follow records a new eligibility timestamp.
+- [x] Operation is idempotent.
 
 ## Dependencies
 
@@ -58,6 +58,10 @@
 
 ## Completion Checklist
 
-- [ ] Repeated unfollow succeeds safely.
-- [ ] Metadata and delivery history survive.
-- [ ] Re-follow gets a new eligibility timestamp.
+- [x] Repeated unfollow succeeds safely.
+- [x] Metadata survives; delivery history remains untouched when introduced.
+- [x] Re-follow gets a new eligibility timestamp.
+
+## Result
+
+Completed on `2026-08-27`. Idempotent unfollow removes only the active `ShowFollow`; show and season metadata remain. Re-follow creates a new record with a later eligibility timestamp. Authenticated DELETE endpoint succeeds even when no active follow exists, and dashboard removes the unfollowed row immediately.

@@ -46,6 +46,13 @@ async function loadFollows() {
 
   followedShows.value = await response.json()
 }
+
+async function unfollow(providerId: number) {
+  const response = await fetch(`/api/shows/${providerId}/follow`, { method: 'DELETE' })
+  if (response.ok) {
+    followedShows.value = followedShows.value.filter(show => show.providerId !== providerId)
+  }
+}
 </script>
 
 <template>
@@ -64,7 +71,8 @@ async function loadFollows() {
       <p v-if="!followedShows.length">No followed shows yet.</p>
       <ul v-else>
         <li v-for="show in followedShows" :key="show.providerId">
-          {{ show.title }} · {{ show.status }}
+          <span>{{ show.title }} · {{ show.status }}</span>
+          <button type="button" @click="unfollow(show.providerId)">Unfollow</button>
         </li>
       </ul>
     </section>
