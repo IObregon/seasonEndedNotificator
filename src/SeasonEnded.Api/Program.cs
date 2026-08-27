@@ -162,6 +162,56 @@ if (app.Environment.IsDevelopment())
 
         return Results.NoContent();
     });
+
+    app.MapPost("/api/auth/magic-link", async (
+        MagicLinkRequest? request,
+        AppDbContext db,
+        IEmailSender sender) =>
+    {
+        if (!MailAddress.TryCreate(request?.Email, out var email))
+        {
+            return Results.Ok(new { message = "If an account exists, a sign-in link has been sent." });
+        }
+
+        var command = new RequestMagicLinkCommand(db, sender);
+        await command.ExecuteAsync(email.Address);
+
+        return Results.Ok(new { message = "If an account exists, a sign-in link has been sent." });
+    });
+
+    app.MapPost("/api/auth/magic-link/consume", async (
+        ConsumeMagicLinkRequest? request,
+        AppDbContext db,
+        HttpContext httpContext,
+        CancellationToken cancellationToken) =>
+    {
+        if (string.IsNullOrWhiteSpace(request?.Token))
+            return Results.Problem("Token is invalid.", statusCode: StatusCodes.Status410Gone);
+
+        var command = new ConsumeMagicLinkCommand(db);
+        var result = await command.ExecuteAsync(request.Token);
+
+        if (!result.Succeeded)
+            return Results.Problem("Token is invalid, expired, or already used.",
+                statusCode: StatusCodes.Status410Gone);
+
+        var user = await db.Users.FindAsync(result.UserId);
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user!.Id.ToString()),
+            new(ClaimTypes.Email, user.Email),
+            new(ClaimTypes.Role, user.Role.ToString())
+        };
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await httpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties { IsPersistent = true });
+
+        return Results.NoContent();
+    });
 }
 
 app.Run();
@@ -171,3 +221,5 @@ public partial class Program;
 public sealed record EmailTestRequest(string Recipient);
 public sealed record InviteUserRequest(string Email);
 public sealed record AcceptInvitationRequest(string Token);
+public sealed record MagicLinkRequest(string Email);
+public sealed record ConsumeMagicLinkRequest(string Token);

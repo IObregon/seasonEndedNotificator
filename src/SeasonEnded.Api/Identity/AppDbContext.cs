@@ -6,6 +6,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Invitation> Invitations => Set<Invitation>();
+    public DbSet<MagicLinkToken> MagicLinkTokens => Set<MagicLinkToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +26,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(i => i.TokenHash).IsRequired();
             entity.Property(i => i.Role).HasConversion<string>();
             entity.Property(i => i.Status).IsRequired();
+        });
+
+        modelBuilder.Entity<MagicLinkToken>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.TokenHash).IsRequired();
+            entity.Property(t => t.Status).IsRequired();
         });
     }
 }

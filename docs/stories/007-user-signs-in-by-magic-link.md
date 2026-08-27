@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Request response does not reveal account existence.
-- Active user receives short-lived single-use link.
-- Consuming valid link creates secure session.
-- Disabled users and reused links cannot authenticate.
+- [x] Request response does not reveal account existence.
+- [x] Active user receives short-lived single-use link.
+- [x] Consuming valid link creates secure session.
+- [x] Disabled users and reused links cannot authenticate.
 
 ## Dependencies
 
@@ -69,7 +69,11 @@
 
 ## Completion Checklist
 
-- [ ] Request response does not disclose account existence.
-- [ ] Active users receive expiring single-use links.
-- [ ] Valid consumption creates a secure session.
-- [ ] Disabled users and replayed links cannot authenticate.
+- [x] Request response does not disclose account existence.
+- [x] Active users receive expiring single-use links.
+- [x] Valid consumption creates a secure session.
+- [x] Disabled users and replayed links cannot authenticate.
+
+## Result
+
+Completed on `2026-08-27`. `RequestMagicLinkCommand` sends 15-minute single-use hashed tokens to active users only. Non-existent and disabled accounts receive identical response. `ConsumeMagicLinkCommand` atomically marks token consumed and creates secure cookie session. Replayed, expired, and disabled-user tokens are rejected. `POST /api/auth/magic-link` and `POST /api/auth/magic-link/consume` endpoints wired with cookie authentication.
