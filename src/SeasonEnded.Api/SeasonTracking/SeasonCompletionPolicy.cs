@@ -16,9 +16,14 @@ public static class SeasonCompletionPolicy
         if (evidence.SeasonNumber <= 0 || evidence.EpisodeType != "regular" || !evidence.ExplicitFinale)
             return false;
 
+        return now >= CompletionTime(evidence);
+    }
+
+    internal static DateTimeOffset CompletionTime(FinaleEvidence evidence)
+    {
         var duration = evidence.RuntimeMinutes is > 0
             ? TimeSpan.FromMinutes(evidence.RuntimeMinutes.Value)
             : MissingRuntimeBuffer;
-        return now >= evidence.AirStart.Add(duration);
+        return evidence.AirStart.Add(duration);
     }
 }

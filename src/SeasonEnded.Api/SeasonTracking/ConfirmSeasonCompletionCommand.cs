@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Identity;
 
 namespace SeasonEnded.Api.SeasonTracking;
@@ -17,10 +16,7 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
             !SeasonCompletionPolicy.IsEligible(evidence, now))
             return new ConfirmSeasonCompletionResult(Created: false);
 
-        var duration = evidence.RuntimeMinutes is > 0
-            ? TimeSpan.FromMinutes(evidence.RuntimeMinutes.Value)
-            : TimeSpan.FromHours(2);
-        var completedAt = evidence.AirStart.Add(duration);
+        var completedAt = SeasonCompletionPolicy.CompletionTime(evidence);
         season.CompletedAt = completedAt;
         context.SeasonCompletionEvents.Add(new SeasonCompletionEvent
         {
