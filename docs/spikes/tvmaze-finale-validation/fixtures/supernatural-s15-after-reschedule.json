@@ -1,0 +1,11 @@
+{
+  "fixtureKind": "captured-current-tvmaze",
+  "capturedAt": "2026-08-27",
+  "sources": ["https://api.tvmaze.com/shows/19", "https://api.tvmaze.com/seasons/93554", "https://api.tvmaze.com/seasons/93554/episodes"],
+  "show": { "id": 19, "name": "Supernatural", "status": "Ended", "timezone": "America/New_York" },
+  "season": { "id": 93554, "number": 15, "premiereDate": "2019-10-10", "endDate": "2020-11-19", "episodeOrder": 20 },
+  "candidate": { "id": 1753661, "season": 15, "number": 20, "type": "regular", "airdate": "2020-11-19", "airtime": "21:00", "airstamp": "2020-11-20T02:00:00+00:00", "runtimeMinutes": 60 },
+  "evaluationTime": "2026-08-27T00:00:00Z",
+  "observedRegularEpisodeCount": 20,
+  "expected": "Completed"
+}

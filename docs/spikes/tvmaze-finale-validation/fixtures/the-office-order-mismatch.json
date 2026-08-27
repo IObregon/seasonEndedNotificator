@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-08-27",
+  "source": "https://api.tvmaze.com/shows/526?embed[]=seasons&embed[]=episodes",
+  "show": { "id": 526, "name": "The Office", "timezone": "America/New_York" },
+  "mismatches": [
+    { "seasonId": 2093, "season": 7, "episodeOrder": 26, "highestRegularNumber": 27, "observedRegularEpisodeCount": 27 },
+    { "seasonId": 2095, "season": 9, "episodeOrder": 27, "highestRegularNumber": 25, "observedRegularEpisodeCount": 25 }
+  ],
+  "expected": "Uncertain",
+  "note": "Episode order and numbering cannot be assumed equivalent."
+}

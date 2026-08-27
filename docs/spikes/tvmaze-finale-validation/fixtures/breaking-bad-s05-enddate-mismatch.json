@@ -1,0 +1,9 @@
+{
+  "capturedAt": "2026-08-27",
+  "source": "https://api.tvmaze.com/shows/169?embed[]=seasons&embed[]=episodes",
+  "show": { "id": 169, "name": "Breaking Bad", "timezone": "America/New_York" },
+  "season": { "id": 757, "number": 5, "premiereDate": "2012-07-15", "endDate": "2019-10-11", "episodeOrder": 16 },
+  "highestRegularEpisode": { "id": 12253, "season": 5, "number": 16, "type": "regular", "airdate": "2013-09-29", "airtime": "22:00", "airstamp": "2013-09-30T02:00:00+00:00" },
+  "expected": "Uncertain",
+  "note": "Season endDate aligns with later franchise content, not final numbered episode; endDate is not standalone finale proof."
+}

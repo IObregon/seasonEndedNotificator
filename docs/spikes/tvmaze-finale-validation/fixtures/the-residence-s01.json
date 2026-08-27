@@ -1,0 +1,9 @@
+{
+  "capturedAt": "2026-08-27",
+  "sources": ["https://api.tvmaze.com/shows/60888", "https://api.tvmaze.com/shows/60888/seasons", "https://api.tvmaze.com/seasons/136098/episodes"],
+  "show": { "id": 60888, "name": "The Residence", "webChannel": "Netflix", "timezone": null },
+  "season": { "id": 136098, "number": 1, "premiereDate": "2025-03-20", "endDate": "2025-03-20", "episodeOrder": 8 },
+  "release": { "regularEpisodeIds": [3080941, 3081154, 3081155, 3081156, 3081157, 3081158, 3081159, 3081160], "numbers": [1, 2, 3, 4, 5, 6, 7, 8], "type": "regular", "airdate": "2025-03-20", "airtime": "", "airstamp": "2025-03-20T12:00:00+00:00" },
+  "expected": "Uncertain",
+  "note": "Eight episodes and same date corroborate a batch, but retained independent evidence does not explicitly prove full-season release on that date. Empty airtime makes this date-only; synthetic noon-UTC airstamp is not trusted as release instant."
+}

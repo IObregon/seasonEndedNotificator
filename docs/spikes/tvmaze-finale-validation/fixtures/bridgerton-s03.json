@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-08-27",
+  "sources": ["https://api.tvmaze.com/shows/42966", "https://api.tvmaze.com/shows/42966/seasons", "https://api.tvmaze.com/seasons/136830/episodes"],
+  "show": { "id": 42966, "name": "Bridgerton", "webChannel": "Netflix", "timezone": null },
+  "season": { "id": 136830, "number": 3, "premiereDate": "2024-05-16", "endDate": "2024-06-13", "episodeOrder": 8 },
+  "releaseClusters": [
+    { "episodeIds": [2399761, 2711886, 2711887, 2711888], "numbers": [1, 2, 3, 4], "airdate": "2024-05-16", "airtime": "", "airstamp": "2024-05-16T12:00:00+00:00", "expectedAfterCluster": "NotCompleted" },
+    { "episodeIds": [2711889, 2711890, 2711891, 2711892], "numbers": [5, 6, 7, 8], "airdate": "2024-06-13", "airtime": "", "airstamp": "2024-06-13T12:00:00+00:00", "expectedAfterCluster": "Completed" }
+  ],
+  "note": "TVmaze does not label release parts; expected parts are independently sourced from Netflix."
+}

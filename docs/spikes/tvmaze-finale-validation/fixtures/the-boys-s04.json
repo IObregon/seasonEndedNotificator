@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-08-27",
+  "sources": ["https://api.tvmaze.com/shows/15299", "https://api.tvmaze.com/shows/15299/seasons", "https://api.tvmaze.com/seasons/160966/episodes"],
+  "show": { "id": 15299, "name": "The Boys", "webChannel": "Prime Video", "timezone": null },
+  "season": { "id": 160966, "number": 4, "premiereDate": "2024-06-13", "endDate": "2024-07-18", "episodeOrder": 8 },
+  "candidate": { "id": 2777914, "season": 4, "number": 8, "type": "regular", "airdate": "2024-07-18", "airtime": "", "airstamp": "2024-07-18T12:00:00+00:00" },
+  "observedRegularEpisodeCount": 8,
+  "expected": "Completed",
+  "note": "Global channel has no timezone. Eligibility starts after 2024-07-18 ends in UTC."
+}

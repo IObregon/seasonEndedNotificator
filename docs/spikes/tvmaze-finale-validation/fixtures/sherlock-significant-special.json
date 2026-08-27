@@ -1,0 +1,8 @@
+{
+  "capturedAt": "2026-08-27",
+  "sources": ["https://api.tvmaze.com/shows/335", "https://api.tvmaze.com/shows/335/seasons", "https://api.tvmaze.com/shows/335/episodes?specials=1"],
+  "show": { "id": 335, "name": "Sherlock", "timezone": "Europe/London" },
+  "season": { "id": 20855, "number": 4, "premiereDate": "2016-01-01", "endDate": "2017-01-15", "episodeOrder": 3 },
+  "candidate": { "id": 401163, "season": 4, "number": null, "type": "significant_special", "airdate": "2016-01-01", "airtime": "21:00", "airstamp": "2016-01-01T21:00:00+00:00" },
+  "expected": "Ineligible"
+}

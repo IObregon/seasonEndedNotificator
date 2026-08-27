@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-08-27",
+  "sources": ["https://api.tvmaze.com/shows/86747", "https://api.tvmaze.com/shows/86747/seasons", "https://api.tvmaze.com/seasons/190133/episodes"],
+  "show": { "id": 86747, "name": "Drag Race Down Under vs The World", "status": "Running", "timezone": "Australia/Sydney" },
+  "season": { "id": 190133, "number": 1, "premiereDate": "2026-06-24", "endDate": "2026-08-28", "episodeOrder": 8 },
+  "latestKnown": { "id": 3708466, "season": 1, "number": 6, "type": "regular", "airdate": "2026-08-28", "airtime": "16:00", "airstamp": "2026-08-28T06:00:00+00:00" },
+  "observedRegularEpisodeCount": 6,
+  "expected": "Uncertain",
+  "contradictions": ["episodeOrder is 8 but only 6 regular episodes are exposed at capture time"]
+}

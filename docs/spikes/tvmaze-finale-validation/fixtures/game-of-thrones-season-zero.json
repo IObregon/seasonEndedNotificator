@@ -1,0 +1,9 @@
+{
+  "capturedAt": "2026-08-27",
+  "source": "https://api.tvmaze.com/shows/82/episodes?specials=1",
+  "show": { "id": 82, "name": "Game of Thrones", "timezone": "America/New_York" },
+  "candidate": { "season": 0, "type": "significant_special" },
+  "expected": "Ineligible",
+  "independentEvidence": "Unknown",
+  "note": "Classification fixture only. Season zero is excluded by product definition regardless of content."
+}
