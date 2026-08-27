@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using SeasonEnded.Api.Identity;
 using System.Net.Mail;
 using System.Security.Claims;
@@ -27,7 +28,20 @@ builder.Services
             var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
             var policy = context.HttpContext.RequestServices.GetRequiredService<ActiveUserPolicy>();
             if (Guid.TryParse(idValue, out var userId) && await policy.CanUseSessionAsync(userId))
+            {
+                var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var user = await db.Users.FindAsync(userId);
+                var roleClaim = context.Principal!.FindFirst(ClaimTypes.Role);
+                if (roleClaim?.Value != user!.Role.ToString())
+                {
+                    var identity = (ClaimsIdentity)context.Principal.Identity!;
+                    if (roleClaim is not null)
+                        identity.RemoveClaim(roleClaim);
+                    identity.AddClaim(new Claim(ClaimTypes.Role, user.Role.ToString()));
+                    context.ShouldRenew = true;
+                }
                 return;
+            }
 
             context.RejectPrincipal();
             await context.HttpContext.SignOutAsync();
@@ -234,6 +248,36 @@ app.MapPost("/api/admin/users/{targetId:guid}/disable", async (
     };
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapPut("/api/admin/users/{targetId:guid}/role", async (
+    Guid targetId,
+    ChangeRoleRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var actorId))
+        return Results.Unauthorized();
+    if (!Enum.TryParse<UserRole>(request?.Role, ignoreCase: true, out var role))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(ChangeRoleRequest.Role)] = ["Role must be 'User' or 'Admin'."]
+        });
+
+    await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+    var result = await new ChangeUserRoleCommand(db).ExecuteAsync(actorId, targetId, role);
+    if (result == ChangeUserRoleResult.Changed)
+        await transaction.CommitAsync();
+
+    return result switch
+    {
+        ChangeUserRoleResult.Changed => Results.NoContent(),
+        ChangeUserRoleResult.NotFound => Results.NotFound(),
+        ChangeUserRoleResult.InactiveTarget => Results.Conflict(new { message = "Inactive users cannot change role." }),
+        ChangeUserRoleResult.LastActiveAdmin => Results.Conflict(new { message = "Last active admin cannot be demoted." }),
+        ChangeUserRoleResult.Unchanged => Results.Conflict(new { message = "User already has that role." }),
+        _ => Results.Forbid()
+    };
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.Run();
 
 public partial class Program;
@@ -244,3 +288,4 @@ public sealed record AcceptInvitationRequest(string Token);
 public sealed record MagicLinkRequest(string Email);
 public sealed record ConsumeMagicLinkRequest(string Token);
 public sealed record SetLanguageRequest(string Language);
+public sealed record ChangeRoleRequest(string Role);

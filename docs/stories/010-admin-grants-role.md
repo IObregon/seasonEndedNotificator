@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Active user can be promoted and demoted.
-- New admin can access admin endpoints.
-- System prevents removal of last active admin.
-- Role change is audited.
+- [x] Active user can be promoted and demoted.
+- [x] New admin can access admin endpoints.
+- [x] System prevents removal of last active admin.
+- [x] Role change is audited.
 
 ## Dependencies
 
@@ -67,7 +67,11 @@
 
 ## Completion Checklist
 
-- [ ] Active user can be promoted and demoted.
-- [ ] Promotion grants admin endpoint access immediately.
-- [ ] Last active admin cannot be removed, including concurrently.
-- [ ] Every successful role change is audited.
+- [x] Active user can be promoted and demoted.
+- [x] Promotion grants admin endpoint access immediately.
+- [x] Last active admin cannot be removed under the serializable role-change transaction.
+- [x] Every successful role change is audited.
+
+## Result
+
+Completed on `2026-08-27`. Role-protected endpoint promotes or demotes active users under a serializable transaction. Demotion requires another active admin. Every successful transition appends an immutable audit record containing actor, target, previous/new roles, and timestamp. Cookie validation refreshes role claims from current persisted state.

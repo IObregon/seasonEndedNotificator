@@ -7,6 +7,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<User> Users => Set<User>();
     public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<MagicLinkToken> MagicLinkTokens => Set<MagicLinkToken>();
+    public DbSet<RoleChangeAudit> RoleChangeAudits => Set<RoleChangeAudit>();
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnsureAuditsAreAppendOnly();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureAuditsAreAppendOnly();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,5 +49,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(t => t.TokenHash).IsRequired();
             entity.Property(t => t.Status).IsRequired();
         });
+
+        modelBuilder.Entity<RoleChangeAudit>(entity =>
+        {
+            entity.HasKey(audit => audit.Id);
+            entity.Property(audit => audit.PreviousRole).HasConversion<string>();
+            entity.Property(audit => audit.NewRole).HasConversion<string>();
+        });
+    }
+
+    private void EnsureAuditsAreAppendOnly()
+    {
+        var auditChanged = ChangeTracker.Entries<RoleChangeAudit>()
+            .Any(entry => entry.State is EntityState.Modified or EntityState.Deleted);
+        if (auditChanged)
+            throw new InvalidOperationException("Role change audits are append-only.");
     }
 }
