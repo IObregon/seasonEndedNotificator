@@ -82,6 +82,34 @@ if (app.Environment.IsDevelopment())
 
         return Results.NoContent();
     });
+
+    app.MapPost("/api/invitations", async (
+        InviteUserRequest? request,
+        AppDbContext db,
+        IEmailSender sender,
+        CancellationToken cancellationToken) =>
+    {
+        if (!MailAddress.TryCreate(request?.Email, out var email))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                [nameof(InviteUserRequest.Email)] = ["Email must be a valid email address"]
+            });
+        }
+
+        var bootstrapEmail = app.Configuration["BootstrapAdmin:Email"] ?? "admin@localhost";
+        var admin = await db.Users.FirstOrDefaultAsync(u => u.Email == bootstrapEmail && u.Role == UserRole.Admin);
+        if (admin is null)
+            return Results.Problem("No admin account available to issue invitations.", statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        var command = new InviteUserCommand(db, sender);
+        var result = await command.ExecuteAsync(admin.Id.ToString(), email.Address);
+
+        if (!result.Created)
+            return Results.Conflict(new { message = "An active invitation already exists." });
+
+        return Results.Created();
+    });
 }
 
 app.Run();
@@ -89,3 +117,4 @@ app.Run();
 public partial class Program;
 
 public sealed record EmailTestRequest(string Recipient);
+public sealed record InviteUserRequest(string Email);

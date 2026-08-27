@@ -5,6 +5,7 @@ namespace SeasonEnded.Api.Identity;
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -15,6 +16,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasIndex(u => u.Email).IsUnique();
             entity.Property(u => u.Role).HasConversion<string>();
             entity.Property(u => u.Status).IsRequired();
+        });
+
+        modelBuilder.Entity<Invitation>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Email).IsRequired();
+            entity.Property(i => i.TokenHash).IsRequired();
+            entity.Property(i => i.Role).HasConversion<string>();
+            entity.Property(i => i.Status).IsRequired();
         });
     }
 }

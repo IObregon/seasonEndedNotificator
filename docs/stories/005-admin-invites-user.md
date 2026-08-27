@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Admin submits email with default `User` role.
-- Single-use expiring invitation is persisted as a hash.
-- Local invitation email is visible in Mailpit.
-- Duplicate active invitation returns clear result.
+- [x] Admin submits email with default `User` role.
+- [x] Single-use expiring invitation is persisted as a hash.
+- [x] Local invitation email is visible in Mailpit.
+- [x] Duplicate active invitation returns clear result.
 
 ## Dependencies
 
@@ -67,7 +67,11 @@
 
 ## Completion Checklist
 
-- [ ] Admin creates invitation with default `User` role.
-- [ ] Only token hash is persisted.
-- [ ] Duplicate-active result is clear and stable.
-- [ ] Mailpit captures the invitation email.
+- [x] Admin creates invitation with default `User` role.
+- [x] Only token hash is persisted.
+- [x] Duplicate-active result is clear and stable.
+- [x] Mailpit captures the invitation email.
+
+## Result
+
+Completed on `2026-08-27`. `InviteUserCommand` creates a single-use invitation with SHA-256 hashed token, 24-hour expiry, and default `User` role. Duplicate active invitations return 409 without creating new records. Raw token appears only in the email body, never in the database. Development endpoint `POST /api/invitations` verified end-to-end through Caddy, API, Mailpit, and PostgreSQL.
