@@ -41,6 +41,19 @@ jobs:
           curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/
           test "$(curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "Healthy"
           test "$(curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "Healthy"
+      - name: Verify local email capture
+        run: |
+          curl --fail \
+            --resolve season-ended.localhost:443:127.0.0.1 \
+            --header "Content-Type: application/json" \
+            --data '{"recipient":"viewer@example.test"}' \
+            https://season-ended.localhost/api/dev/email-test
+          message_id="$(curl --fail --silent http://localhost:8025/api/v1/messages | jq --raw-output '.messages[0].ID')"
+          message="$(curl --fail --silent "http://localhost:8025/api/v1/message/${message_id}")"
+          test "$(jq --raw-output '.To[0].Address' <<< "$message")" = "viewer@example.test"
+          test "$(jq --raw-output '.Subject' <<< "$message")" = "Season Ended email check"
+          test "$(jq --raw-output '.Text' <<< "$message")" = "Local email is working."
+          test "$(jq --raw-output '.HTML' <<< "$message")" = '<p><strong>Local email is working.</strong></p>'
       - name: Verify readiness depends on PostgreSQL
         env:
           POSTGRES_PASSWORD: ci-only-password
@@ -48,6 +61,14 @@ jobs:
           docker compose -f deploy/compose.yml stop postgres
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "503"
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "200"
+      - name: Verify production isolation
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          APP_DOMAIN: example.com
+        run: |
+          docker compose -f deploy/compose.yml -f deploy/compose.production.yml config --format json > production-compose.json
+          test "$(jq --raw-output '.services.api.environment.ASPNETCORE_ENVIRONMENT' production-compose.json)" = "Production"
+          test "$(jq --raw-output '.services.mailpit // "absent"' production-compose.json)" = "absent"
       - name: Print logs
         if: failure()
         env:

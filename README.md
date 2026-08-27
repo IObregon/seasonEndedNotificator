@@ -7,7 +7,7 @@ PWA that notifies users after a TV season finale finishes airing.
 - .NET SDK `10.0.111` or compatible .NET 10 patch.
 - Node.js 22 and npm 10 or later.
 - Docker Desktop or Docker Engine with Compose v2.
-- Ports `80` and `443` available for the local Compose stack.
+- Ports `80`, `443`, `1025`, and `8025` available on loopback for the local Compose stack.
 
 ## Local Builds
 
@@ -61,3 +61,17 @@ docker compose --env-file .env \
 - `api`: ASP.NET Core Minimal API on the internal network.
 - `postgres`: PostgreSQL with persistent named volume.
 - `caddy`: only public entry point, terminating local HTTPS and routing `/health/*` to API.
+- `mailpit`: local SMTP capture with inbox at `http://localhost:8025`.
+
+## Local Email
+
+With Compose running, send a multipart test message:
+
+```bash
+curl --insecure \
+  --header "Content-Type: application/json" \
+  --data '{"recipient":"viewer@example.test"}' \
+  https://season-ended.localhost/api/dev/email-test
+```
+
+Open `http://localhost:8025` to inspect recipient, subject, headers, HTML, and plain-text bodies. Mailpit captures messages locally and sends nothing to the internet. The endpoint and Mailpit service are absent from production configuration.

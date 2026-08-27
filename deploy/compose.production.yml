@@ -1,4 +1,19 @@
 services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Email__Smtp__Host: null
+      Email__Smtp__Port: null
+      Email__Smtp__UseTls: null
+      Email__Smtp__FromAddress: null
+      Email__Smtp__FromName: null
+
   caddy:
+    ports: !override
+      - "80:80"
+      - "443:443"
     volumes:
       - ./Caddyfile.production:/etc/caddy/Caddyfile:ro
+
+  mailpit:
+    profiles: ["development-only"]

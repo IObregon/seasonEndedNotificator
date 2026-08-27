@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Development Compose starts Mailpit on SMTP port `1025` and UI port `8025`.
-- A development-only test action sends HTML and plain-text email through `IEmailSender`.
-- Message appears at `http://localhost:8025`.
-- Production credentials are neither required nor used.
+- [x] Development Compose starts Mailpit on SMTP port `1025` and UI port `8025`.
+- [x] A development-only test action sends HTML and plain-text email through `IEmailSender`.
+- [x] Message appears at `http://localhost:8025`.
+- [x] Production credentials are neither required nor used.
 
 ## Dependencies
 
@@ -66,6 +66,10 @@
 
 ## Completion Checklist
 
-- [ ] Development Compose exposes both Mailpit ports.
-- [ ] Test email contains HTML and plain-text parts.
-- [ ] Production neither starts Mailpit nor exposes the test action.
+- [x] Development Compose exposes both Mailpit ports.
+- [x] Test email contains HTML and plain-text parts.
+- [x] Production neither starts Mailpit nor exposes the test action.
+
+## Result
+
+Completed on `2026-08-27`. Development-only `POST /api/dev/email-test` sends through a minimal `IEmailSender` port and SMTP adapter. Mailpit captures SMTP on `1025`, exposes its inbox/API on `8025`, and was verified with sender, recipient, subject, plain-text body, and HTML body. Production uses an unconfigured sender until a production provider is selected and does not map the development endpoint or start Mailpit.

@@ -22,12 +22,30 @@ services:
       dockerfile: src/SeasonEnded.Api/Dockerfile
     environment:
       ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-seasonended};Username=${POSTGRES_USER:-seasonended};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      Email__Smtp__Host: mailpit
+      Email__Smtp__Port: 1025
+      Email__Smtp__UseTls: "false"
+      Email__Smtp__FromAddress: notifications@season-ended.local
+      Email__Smtp__FromName: Season Ended
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/health/ready | grep -q Healthy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -49,8 +67,8 @@ services:
     environment:
       APP_DOMAIN: ${APP_DOMAIN:-season-ended.localhost}
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
     extra_hosts:
       - "${APP_DOMAIN:-season-ended.localhost}:127.0.0.1"
     volumes:
