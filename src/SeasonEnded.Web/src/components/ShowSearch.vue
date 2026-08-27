@@ -10,9 +10,9 @@ async function search() {
   if (!query.value.trim()) return
   state.value = 'loading'
 
-  const response = await searchShows(query.value)
-  results.value = response.results
-  state.value = response.state
+  const searchResult = await searchShows(query.value)
+  results.value = searchResult.results
+  state.value = searchResult.state
 }
 </script>
 
