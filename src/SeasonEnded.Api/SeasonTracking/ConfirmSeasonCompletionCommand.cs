@@ -1,4 +1,5 @@
 using SeasonEnded.Api.Identity;
+using SeasonEnded.Api.Catalog;
 
 namespace SeasonEnded.Api.SeasonTracking;
 
@@ -9,22 +10,11 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
         FinaleEvidence evidence,
         DateTimeOffset now)
     {
-        var season = await context.Seasons.FindAsync(seasonId);
-        if (season is null || season.CompletedAt is not null)
-            return new ConfirmSeasonCompletionResult(Created: false);
-        if (season.Number != evidence.SeasonNumber ||
-            !SeasonCompletionPolicy.IsEligible(evidence, now))
+        var season = await FindIncompleteSeasonAsync(seasonId, evidence.SeasonNumber);
+        if (season is null || !SeasonCompletionPolicy.IsEligible(evidence, now))
             return new ConfirmSeasonCompletionResult(Created: false);
 
-        var completedAt = SeasonCompletionPolicy.CompletionTime(evidence);
-        season.CompletedAt = completedAt;
-        context.SeasonCompletionEvents.Add(new SeasonCompletionEvent
-        {
-            SeasonId = seasonId,
-            CompletedAt = completedAt
-        });
-        await context.SaveChangesAsync();
-        return new ConfirmSeasonCompletionResult(Created: true);
+        return await CompleteAsync(season, SeasonCompletionPolicy.CompletionTime(evidence));
     }
 
     public async Task<ConfirmSeasonCompletionResult> ExecuteAsync(
@@ -32,22 +22,11 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
         DateOnlyFinaleEvidence evidence,
         DateTimeOffset now)
     {
-        var season = await context.Seasons.FindAsync(seasonId);
-        if (season is null || season.CompletedAt is not null)
-            return new ConfirmSeasonCompletionResult(Created: false);
-        if (season.Number != evidence.SeasonNumber ||
-            !DateOnlyCompletionPolicy.IsEligible(evidence, now))
+        var season = await FindIncompleteSeasonAsync(seasonId, evidence.SeasonNumber);
+        if (season is null || !DateOnlyCompletionPolicy.IsEligible(evidence, now))
             return new ConfirmSeasonCompletionResult(Created: false);
 
-        var completedAt = DateOnlyCompletionPolicy.CompletionTime(evidence);
-        season.CompletedAt = completedAt;
-        context.SeasonCompletionEvents.Add(new SeasonCompletionEvent
-        {
-            SeasonId = seasonId,
-            CompletedAt = completedAt
-        });
-        await context.SaveChangesAsync();
-        return new ConfirmSeasonCompletionResult(Created: true);
+        return await CompleteAsync(season, DateOnlyCompletionPolicy.CompletionTime(evidence));
     }
 
     public async Task<ConfirmSeasonCompletionResult> ExecuteAsync(
@@ -55,18 +34,29 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
         BatchReleaseEvidence evidence,
         DateTimeOffset now)
     {
-        var season = await context.Seasons.FindAsync(seasonId);
-        if (season is null || season.CompletedAt is not null)
-            return new ConfirmSeasonCompletionResult(Created: false);
-        if (season.Number != evidence.SeasonNumber ||
-            !BatchCompletionPolicy.IsEligible(evidence, now))
+        var season = await FindIncompleteSeasonAsync(seasonId, evidence.SeasonNumber);
+        if (season is null || !BatchCompletionPolicy.IsEligible(evidence, now))
             return new ConfirmSeasonCompletionResult(Created: false);
 
-        var completedAt = BatchCompletionPolicy.CompletionTime(evidence);
+        return await CompleteAsync(season, BatchCompletionPolicy.CompletionTime(evidence));
+    }
+
+    private async Task<Season?> FindIncompleteSeasonAsync(Guid seasonId, int seasonNumber)
+    {
+        var season = await context.Seasons.FindAsync(seasonId);
+        return season is { CompletedAt: null } && season.Number == seasonNumber
+            ? season
+            : null;
+    }
+
+    private async Task<ConfirmSeasonCompletionResult> CompleteAsync(
+        Season season,
+        DateTimeOffset completedAt)
+    {
         season.CompletedAt = completedAt;
         context.SeasonCompletionEvents.Add(new SeasonCompletionEvent
         {
-            SeasonId = seasonId,
+            SeasonId = season.Id,
             CompletedAt = completedAt
         });
         await context.SaveChangesAsync();
