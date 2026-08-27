@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Identity;
 using System.Net.Mail;
-using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres")
@@ -147,18 +145,7 @@ if (app.Environment.IsDevelopment())
             return Results.Problem("Invitation token is invalid, expired, or already used.",
                 statusCode: StatusCodes.Status410Gone);
 
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, result.UserId!.ToString()!),
-            new(ClaimTypes.Email, result.Email!)
-        };
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
-        await httpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            principal,
-            new AuthenticationProperties { IsPersistent = true });
+        await SessionSignIn.SignInUserAsync(httpContext, result.UserId!.Value, result.Email!, UserRole.User);
 
         return Results.NoContent();
     });
@@ -196,19 +183,7 @@ if (app.Environment.IsDevelopment())
                 statusCode: StatusCodes.Status410Gone);
 
         var user = await db.Users.FindAsync(result.UserId);
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user!.Id.ToString()),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role.ToString())
-        };
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
-        await httpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            principal,
-            new AuthenticationProperties { IsPersistent = true });
+        await SessionSignIn.SignInUserAsync(httpContext, user!.Id, user.Email, user.Role);
 
         return Results.NoContent();
     });
