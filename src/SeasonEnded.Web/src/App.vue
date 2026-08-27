@@ -12,6 +12,7 @@ type ShowDetailsData = {
     number: number
     premiereDate: string | null
     endDate: string | null
+    completedAt: string | null
   }>
 }
 

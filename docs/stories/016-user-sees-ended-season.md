@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Detail page shows known completion date.
-- Following after completion creates no notification candidate for that season.
-- Future seasons remain eligible.
-- Behavior has automated test around follow timestamp.
+- [x] Detail page shows known completion date.
+- [x] Following after completion creates no notification candidate for that season.
+- [x] Future seasons remain eligible.
+- [x] Behavior has automated test around follow timestamp.
 
 ## Dependencies
 
@@ -63,6 +63,10 @@
 
 ## Completion Checklist
 
-- [ ] Completion date is visible before following.
-- [ ] Timestamp boundary tests pass.
-- [ ] Future-season eligibility remains intact.
+- [x] Completion date is visible before following.
+- [x] Timestamp boundary tests pass.
+- [x] Future-season eligibility remains intact.
+
+## Result
+
+Completed on `2026-08-27`. Show detail responses and UI display known season completion dates. Candidate policy requires completion strictly after `FollowedAt`, excluding events at or before follow time. Persisted candidate query joins user follows, seasons, and completion events so later seasons remain eligible while historical completions stay suppressed.

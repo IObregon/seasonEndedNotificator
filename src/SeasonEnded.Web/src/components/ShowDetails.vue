@@ -11,6 +11,7 @@ const props = defineProps<{
       number: number
       premiereDate: string | null
       endDate: string | null
+      completedAt: string | null
     }>
   }
 }>()
@@ -34,7 +35,8 @@ async function follow() {
     <ul>
       <li v-for="season in show.seasons" :key="season.number">
         <strong>Season {{ season.number }}</strong>
-        <span>{{ season.premiereDate ?? 'Unknown start' }} – {{ season.endDate ?? 'Unknown end' }}</span>
+        <span v-if="season.completedAt">Completed {{ season.completedAt.slice(0, 10) }}</span>
+        <span v-else>{{ season.premiereDate ?? 'Unknown start' }} – {{ season.endDate ?? 'Unknown end' }}</span>
       </li>
     </ul>
   </section>

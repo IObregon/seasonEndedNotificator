@@ -349,7 +349,8 @@ app.MapGet("/api/shows/{providerId:int}", async (
                 .Select(season => new SeasonResponse(
                     season.Number,
                     season.PremiereDate,
-                    season.EndDate))));
+                    season.EndDate,
+                    season.CompletedAt))));
     }
     catch (TvShowNotFoundException)
     {
@@ -437,7 +438,11 @@ public sealed record ShowDetailsResponse(
     string Status,
     string? ImageUrl,
     IEnumerable<SeasonResponse> Seasons);
-public sealed record SeasonResponse(int Number, DateOnly? PremiereDate, DateOnly? EndDate);
+public sealed record SeasonResponse(
+    int Number,
+    DateOnly? PremiereDate,
+    DateOnly? EndDate,
+    DateTimeOffset? CompletedAt);
 public sealed record FollowedShowResponse(
     int ProviderId,
     string Title,
