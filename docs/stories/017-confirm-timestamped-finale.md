@@ -4,12 +4,12 @@
 
 ## Acceptance Criteria
 
-- `TrackedSeason` excludes season zero and specials.
-- Completion policy requires explicit finale identity from authority selected in Story 001a.
-- Completion policy compares current time with episode end (`airstamp + runtime`) or a conservative fallback buffer.
-- A regular episode without finale authority remains incomplete after airing.
-- Transition emits one `SeasonCompleted` domain event.
-- Re-evaluation cannot create a duplicate completion event.
+- [x] Completion policy excludes season zero and specials.
+- [x] Completion policy requires explicit finale identity from authority selected in Story 001a.
+- [x] Completion policy compares current time with episode end (`airstamp + runtime`) or a conservative fallback buffer.
+- [x] A regular episode without finale authority remains incomplete after airing.
+- [x] Transition persists one season-completion event.
+- [x] Re-evaluation cannot create a duplicate completion event.
 
 ## Dependencies
 
@@ -66,6 +66,10 @@
 
 ## Completion Checklist
 
-- [ ] Finale authority and original-zone episode-end boundaries pass.
-- [ ] Completion and event persist atomically.
-- [ ] Re-evaluation emits no duplicate.
+- [x] Finale authority and original-zone episode-end boundaries pass.
+- [x] Completion and event persist atomically.
+- [x] Re-evaluation emits no duplicate.
+
+## Result
+
+Completed on `2026-08-27`. Pure completion policy requires positive season number, regular episode type, explicit finale authority, and elapsed episode end. Missing runtime uses a conservative two-hour buffer. Eligible evaluation stores season completion and one uniquely constrained event in one save; repeated evaluation is idempotent. TMDB adapter activation remains subject to ADR 0002 credentialed pre-production verification.

@@ -20,4 +20,5 @@ public sealed class Season
     public int Number { get; init; }
     public DateOnly? PremiereDate { get; init; }
     public DateOnly? EndDate { get; init; }
+    public DateTimeOffset? CompletedAt { get; set; }
 }
