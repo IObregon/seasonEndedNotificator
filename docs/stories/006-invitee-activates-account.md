@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Valid unused token activates matching account.
-- Used, expired, or invalid token is rejected.
-- Token cannot be reused.
-- Acceptance signs user in with secure cookie.
+- [x] Valid unused token activates matching account.
+- [x] Used, expired, or invalid token is rejected.
+- [x] Token cannot be reused.
+- [x] Acceptance signs user in with secure cookie.
 
 ## Dependencies
 
@@ -67,7 +67,11 @@
 
 ## Completion Checklist
 
-- [ ] Valid token activates matching account once.
-- [ ] Invalid, expired, and used tokens fail uniformly.
-- [ ] Replay creates no session.
-- [ ] Successful acceptance sets a secure cookie.
+- [x] Valid token activates matching account once.
+- [x] Invalid, expired, and used tokens fail uniformly.
+- [x] Replay creates no session.
+- [x] Successful acceptance sets a secure cookie.
+
+## Result
+
+Completed on `2026-08-27`. `AcceptInvitationCommand` atomically marks invitation as accepted and creates active user. Token hash lookup ensures replay is rejected. `POST /api/invitations/accept` endpoint creates a secure `HttpOnly`, `SameSite=Lax`, persistent cookie session via ASP.NET Core cookie authentication.

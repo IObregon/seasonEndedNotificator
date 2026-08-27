@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Identity;
 using System.Net.Mail;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres")
@@ -9,6 +12,18 @@ var postgresConnection = builder.Configuration.GetConnectionString("Postgres")
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(postgresConnection));
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.LoginPath = "/api/auth/magic-link";
+    });
+builder.Services.AddAuthorization();
 
 builder.Services
     .AddHealthChecks()
@@ -32,6 +47,8 @@ else
 }
 
 var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -110,6 +127,41 @@ if (app.Environment.IsDevelopment())
 
         return Results.Created();
     });
+
+    app.MapPost("/api/invitations/accept", async (
+        AcceptInvitationRequest? request,
+        AppDbContext db,
+        HttpContext httpContext,
+        CancellationToken cancellationToken) =>
+    {
+        if (string.IsNullOrWhiteSpace(request?.Token))
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                [nameof(AcceptInvitationRequest.Token)] = ["Token is required"]
+            });
+
+        var command = new AcceptInvitationCommand(db);
+        var result = await command.ExecuteAsync(request.Token);
+
+        if (!result.Succeeded)
+            return Results.Problem("Invitation token is invalid, expired, or already used.",
+                statusCode: StatusCodes.Status410Gone);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, result.UserId!.ToString()!),
+            new(ClaimTypes.Email, result.Email!)
+        };
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await httpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties { IsPersistent = true });
+
+        return Results.NoContent();
+    });
 }
 
 app.Run();
@@ -118,3 +170,4 @@ public partial class Program;
 
 public sealed record EmailTestRequest(string Recipient);
 public sealed record InviteUserRequest(string Email);
+public sealed record AcceptInvitationRequest(string Token);

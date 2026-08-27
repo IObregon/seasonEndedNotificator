@@ -27,7 +27,7 @@ public sealed class InviteUserCommand(AppDbContext context, IEmailSender emailSe
         }
 
         var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-        var tokenHash = HashToken(rawToken);
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
 
         var invitation = new Invitation
         {
@@ -50,13 +50,6 @@ public sealed class InviteUserCommand(AppDbContext context, IEmailSender emailSe
             CancellationToken.None);
 
         return new InvitationResult(Created: true, RawToken: rawToken);
-    }
-
-    private static string HashToken(string rawToken)
-    {
-        var bytes = Encoding.UTF8.GetBytes(rawToken);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash);
     }
 }
 
