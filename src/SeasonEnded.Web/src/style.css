@@ -133,6 +133,27 @@ h1 {
   border-bottom: 1px solid #52615a;
 }
 
+.show-details button,
+.section-heading button {
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  color: #101716;
+  background: #c6e56a;
+  cursor: pointer;
+}
+
+.followed-shows {
+  width: min(42rem, 100%);
+  margin-top: 3rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .poster-placeholder {
   display: grid;
   place-items: center;

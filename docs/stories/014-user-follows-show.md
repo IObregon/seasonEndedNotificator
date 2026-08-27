@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Follow records user, show, and current timestamp.
-- Duplicate follow is idempotent.
-- Dashboard lists followed show.
-- Follow applies to future seasons without season selection.
+- [x] Follow records user, show, and current timestamp.
+- [x] Duplicate follow is idempotent.
+- [x] Dashboard lists followed show.
+- [x] Follow applies to future seasons without season selection.
 
 ## Dependencies
 
@@ -58,6 +58,10 @@
 
 ## Completion Checklist
 
-- [ ] Duplicate follow is idempotent.
-- [ ] Follow timestamp is persisted once.
-- [ ] Dashboard is isolated by user.
+- [x] Duplicate follow is idempotent.
+- [x] Follow timestamp is persisted once.
+- [x] Dashboard is isolated by user.
+
+## Result
+
+Completed on `2026-08-27`. `ShowFollow` stores one unique user/show pair and immutable follow timestamp. Repeated follow returns the existing record unchanged. Authenticated endpoints follow imported shows by provider ID and list only the current user's followed shows. Detail UI exposes stable follow feedback and dashboard refresh renders followed titles.

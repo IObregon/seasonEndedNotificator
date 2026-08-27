@@ -4,6 +4,7 @@ import ShowSearch from './components/ShowSearch.vue'
 import ShowDetails from './components/ShowDetails.vue'
 
 type ShowDetailsData = {
+  providerId: number
   title: string
   premiereYear: number | null
   status: string
@@ -16,11 +17,17 @@ type ShowDetailsData = {
 
 const selectedShow = ref<ShowDetailsData | null>(null)
 const detailsError = ref(false)
+const followedShows = ref<ShowDetailsData[]>([])
 
 async function loadDetails(providerId: number) {
   const response = await fetch(`/api/shows/${providerId}`)
   detailsError.value = !response.ok
   selectedShow.value = response.ok ? await response.json() : null
+}
+
+async function loadFollows() {
+  const response = await fetch('/api/follows')
+  followedShows.value = response.ok ? await response.json() : []
 }
 </script>
 
@@ -32,5 +39,17 @@ async function loadDetails(providerId: number) {
     <ShowSearch @select="loadDetails" />
     <p v-if="detailsError">Show details are unavailable. Try again.</p>
     <ShowDetails v-if="selectedShow" :show="selectedShow" />
+    <section class="followed-shows">
+      <div class="section-heading">
+        <h2>Followed shows</h2>
+        <button type="button" @click="loadFollows">Refresh</button>
+      </div>
+      <p v-if="!followedShows.length">No followed shows yet.</p>
+      <ul v-else>
+        <li v-for="show in followedShows" :key="show.providerId">
+          {{ show.title }} · {{ show.status }}
+        </li>
+      </ul>
+    </section>
   </main>
 </template>

@@ -362,6 +362,47 @@ app.MapGet("/api/shows/{providerId:int}", async (
     }
 }).RequireAuthorization();
 
+app.MapPost("/api/shows/{providerId:int}/follow", async (
+    int providerId,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var show = await db.Shows.FirstOrDefaultAsync(item => item.ProviderId == providerId);
+    if (show is null)
+        return Results.NotFound();
+
+    var result = await new FollowShowCommand(db).ExecuteAsync(userId, show.Id);
+    return Results.Ok(new { followedAt = result.Follow.FollowedAt, created = result.Created });
+}).RequireAuthorization();
+
+app.MapGet("/api/follows", async (
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var followedShows = await db.ShowFollows
+        .Where(follow => follow.UserId == userId)
+        .Join(db.Shows,
+            follow => follow.ShowId,
+            show => show.Id,
+            (follow, show) => new FollowedShowResponse(
+                show.ProviderId,
+                show.Title,
+                show.PremiereYear,
+                show.Status,
+                show.ImageUrl,
+                follow.FollowedAt))
+        .OrderBy(show => show.Title)
+        .ToListAsync();
+
+    return Results.Ok(followedShows);
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;
@@ -382,3 +423,10 @@ public sealed record ShowDetailsResponse(
     string? ImageUrl,
     IEnumerable<SeasonResponse> Seasons);
 public sealed record SeasonResponse(int Number, DateOnly? PremiereDate, DateOnly? EndDate);
+public sealed record FollowedShowResponse(
+    int ProviderId,
+    string Title,
+    int? PremiereYear,
+    string Status,
+    string? ImageUrl,
+    DateTime FollowedAt);

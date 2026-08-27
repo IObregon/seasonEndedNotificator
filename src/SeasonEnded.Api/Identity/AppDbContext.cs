@@ -11,6 +11,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<RoleChangeAudit> RoleChangeAudits => Set<RoleChangeAudit>();
     public DbSet<Show> Shows => Set<Show>();
     public DbSet<Season> Seasons => Set<Season>();
+    public DbSet<ShowFollow> ShowFollows => Set<ShowFollow>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -76,6 +77,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(season => season.Id);
             entity.HasIndex(season => season.ProviderSeasonId).IsUnique();
+        });
+
+        modelBuilder.Entity<ShowFollow>(entity =>
+        {
+            entity.HasKey(follow => follow.Id);
+            entity.HasIndex(follow => new { follow.UserId, follow.ShowId }).IsUnique();
         });
 
     }
