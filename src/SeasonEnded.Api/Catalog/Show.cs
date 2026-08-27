@@ -1,3 +1,5 @@
+using SeasonEnded.Api.SeasonTracking;
+
 namespace SeasonEnded.Api.Catalog;
 
 public sealed class Show
@@ -21,4 +23,5 @@ public sealed class Season
     public DateOnly? PremiereDate { get; init; }
     public DateOnly? EndDate { get; init; }
     public DateTimeOffset? CompletedAt { get; set; }
+    public UncertaintyReason? UncertaintyReason { get; set; }
 }

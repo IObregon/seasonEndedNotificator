@@ -419,6 +419,25 @@ app.MapGet("/api/follows", async (
     return Results.Ok(followedShows);
 }).RequireAuthorization();
 
+app.MapGet("/api/admin/metadata/issues", async (AppDbContext db) =>
+{
+    var issues = await db.Seasons
+        .Where(season => season.UncertaintyReason != null)
+        .Join(db.Shows,
+            season => season.ShowId,
+            show => show.Id,
+            (season, show) => new MetadataIssueResponse(
+                show.ProviderId,
+                show.Title,
+                season.Number,
+                season.UncertaintyReason!.Value.ToString()))
+        .OrderBy(issue => issue.Title)
+        .ThenBy(issue => issue.SeasonNumber)
+        .ToListAsync();
+
+    return Results.Ok(issues);
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.Run();
 
 public partial class Program;
@@ -450,3 +469,8 @@ public sealed record FollowedShowResponse(
     string Status,
     string? ImageUrl,
     DateTime FollowedAt);
+public sealed record MetadataIssueResponse(
+    int ProviderId,
+    string Title,
+    int SeasonNumber,
+    string Reason);

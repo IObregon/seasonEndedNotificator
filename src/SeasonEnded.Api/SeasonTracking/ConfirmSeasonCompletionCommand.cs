@@ -53,6 +53,7 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
         Season season,
         DateTimeOffset completedAt)
     {
+        season.UncertaintyReason = null;
         season.CompletedAt = completedAt;
         context.SeasonCompletionEvents.Add(new SeasonCompletionEvent
         {

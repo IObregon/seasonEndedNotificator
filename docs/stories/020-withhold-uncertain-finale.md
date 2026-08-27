@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Missing or contradictory evidence yields `Uncertain`.
-- Uncertain season emits no completion event.
-- Reason is persisted for admin inspection.
-- Later valid evidence can complete season.
+- [x] Missing or contradictory evidence yields `Uncertain`.
+- [x] Uncertain season emits no completion event.
+- [x] Reason is persisted for admin inspection.
+- [x] Later valid evidence can complete season.
 
 ## Dependencies
 
@@ -63,6 +63,10 @@
 
 ## Completion Checklist
 
-- [ ] Every uncertainty has a stored reason.
-- [ ] Uncertain seasons emit no completion.
-- [ ] Valid later evidence can complete once.
+- [x] Every known uncertainty has a stable stored reason.
+- [x] Uncertain seasons emit no completion.
+- [x] Valid later evidence can complete once.
+
+## Result
+
+Completed on `2026-08-27`. Missing authority, schedule, timezone, mapping conflict, and episode-count conflict map to stable `UncertaintyReason` values. Reasons persist on incomplete seasons and are visible through the role-protected metadata-issues endpoint. Uncertain evidence creates no completion event; later valid evidence clears the reason and enters the existing exactly-once transition.

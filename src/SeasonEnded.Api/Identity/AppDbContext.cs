@@ -79,6 +79,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(season => season.Id);
             entity.HasIndex(season => season.ProviderSeasonId).IsUnique();
+            entity.Property(season => season.UncertaintyReason).HasConversion<string>();
         });
 
         modelBuilder.Entity<ShowFollow>(entity =>
