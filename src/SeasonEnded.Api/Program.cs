@@ -26,11 +26,11 @@ builder.Services
         {
             var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
             var policy = context.HttpContext.RequestServices.GetRequiredService<ActiveUserPolicy>();
-            if (!Guid.TryParse(idValue, out var userId) || !await policy.CanUseSessionAsync(userId))
-            {
-                context.RejectPrincipal();
-                await context.HttpContext.SignOutAsync();
-            }
+            if (Guid.TryParse(idValue, out var userId) && await policy.CanUseSessionAsync(userId))
+                return;
+
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync();
         };
     });
 builder.Services.AddAuthorization();
