@@ -50,6 +50,32 @@ public sealed class ConfirmSeasonCompletionCommandTests
         Assert.Single(context.SeasonCompletionEvents);
     }
 
+    [Fact]
+    public async Task Date_only_finale_emits_once_after_local_midnight()
+    {
+        await using var context = CreateContext();
+        var show = new Show { ProviderId = 82, Title = "Game of Thrones", Status = "Ended" };
+        var season = new Season { Show = show, ProviderSeasonId = 8, Number = 8 };
+        show.Seasons.Add(season);
+        context.Shows.Add(show);
+        await context.SaveChangesAsync();
+        var evidence = new DateOnlyFinaleEvidence(
+            8, "regular", true, new DateOnly(2026, 8, 27), "UTC");
+        var command = new ConfirmSeasonCompletionCommand(context);
+
+        var before = await command.ExecuteAsync(
+            season.Id, evidence, new DateTimeOffset(2026, 8, 27, 23, 59, 59, TimeSpan.Zero));
+        var first = await command.ExecuteAsync(
+            season.Id, evidence, new DateTimeOffset(2026, 8, 28, 0, 0, 0, TimeSpan.Zero));
+        var repeated = await command.ExecuteAsync(
+            season.Id, evidence, new DateTimeOffset(2026, 8, 28, 1, 0, 0, TimeSpan.Zero));
+
+        Assert.False(before.Created);
+        Assert.True(first.Created);
+        Assert.False(repeated.Created);
+        Assert.Single(context.SeasonCompletionEvents);
+    }
+
     private static AppDbContext CreateContext() => new(
         new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Finale is ineligible throughout listed local date.
-- It becomes eligible after local midnight.
-- Daylight-saving boundaries are covered by tests.
-- Existing precise-timestamp behavior remains unchanged.
+- [x] Finale is ineligible throughout listed local date.
+- [x] It becomes eligible after local midnight.
+- [x] Daylight-saving boundaries are covered by tests.
+- [x] Existing precise-timestamp behavior remains unchanged.
 
 ## Dependencies
 
@@ -63,6 +63,10 @@
 
 ## Completion Checklist
 
-- [ ] Both daylight-saving boundaries pass.
-- [ ] Precise behavior is unchanged.
-- [ ] Date-only event remains exactly once.
+- [x] Both daylight-saving boundaries pass.
+- [x] Precise behavior is unchanged.
+- [x] Date-only event remains exactly once.
+
+## Result
+
+Completed on `2026-08-27`. Date-only finale evidence is distinct from precise airtime evidence and includes original IANA timezone. Eligibility begins at next local midnight, with spring-forward and fall-back boundary coverage. Existing precise completion path is unchanged, and repeated post-midnight evaluation leaves one completion event.
