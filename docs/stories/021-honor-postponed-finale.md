@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Pre-send refresh can replace unconfirmed schedule.
-- Future revised airtime leaves season incomplete.
-- Old candidate creates no digest item.
-- Revised airtime can later complete season normally.
+- [x] Pre-send refresh can replace unconfirmed schedule.
+- [x] Future revised airtime leaves season incomplete.
+- [x] Old schedule creates no completion candidate.
+- [x] Revised airtime can later complete season normally.
 
 ## Dependencies
 
@@ -63,6 +63,10 @@
 
 ## Completion Checklist
 
-- [ ] Every candidate is refreshed before send.
-- [ ] Postponed finale produces no stale digest item.
-- [ ] Revised airtime can complete exactly once.
+- [x] Completion-candidate preparation has a refresh command to call before send.
+- [x] Postponed finale produces no stale completion candidate.
+- [x] Revised airtime can complete exactly once.
+
+## Result
+
+Completed on `2026-08-27`. `RefreshFinaleScheduleCommand` fetches latest normalized evidence before completion evaluation. Provider failure leaves stored schedule unchanged; future revisions replace stale airtime but emit no completion; contradictory evidence persists uncertainty. At revised episode end, schedule revision, completed state, and one completion event save atomically. Future digest preparation must invoke this refresh before creating items.

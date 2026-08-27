@@ -24,4 +24,6 @@ public sealed class Season
     public DateOnly? EndDate { get; init; }
     public DateTimeOffset? CompletedAt { get; set; }
     public UncertaintyReason? UncertaintyReason { get; set; }
+    public DateTimeOffset? FinaleAirStart { get; set; }
+    public int? FinaleRuntimeMinutes { get; set; }
 }
