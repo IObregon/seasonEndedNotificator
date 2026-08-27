@@ -13,8 +13,12 @@ export async function searchShows(
   fetcher: typeof fetch = fetch,
 ): Promise<{ state: SearchState; results: ShowResult[] }> {
   const response = await fetcher(`/api/shows/search?query=${encodeURIComponent(query.trim())}`)
-  if (response.status === 429) return { state: 'rate-limited', results: [] }
-  if (!response.ok) return { state: 'error', results: [] }
+  if (response.status === 429) {
+    return { state: 'rate-limited', results: [] }
+  }
+  if (!response.ok) {
+    return { state: 'error', results: [] }
+  }
 
   const results: ShowResult[] = await response.json()
   return { state: results.length ? 'idle' : 'empty', results }

@@ -1,6 +1,6 @@
-namespace SeasonEnded.Api.Identity;
-
 using Microsoft.EntityFrameworkCore;
+
+namespace SeasonEnded.Api.Identity;
 
 public sealed class ChangeUserRoleCommand(AppDbContext context)
 {

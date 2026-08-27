@@ -7,7 +7,9 @@ const results = ref<ShowResult[]>([])
 const state = ref<SearchState | 'loading'>('idle')
 
 async function search() {
-  if (!query.value.trim()) return
+  if (!query.value.trim()) {
+    return
+  }
   state.value = 'loading'
 
   const searchResult = await searchShows(query.value)

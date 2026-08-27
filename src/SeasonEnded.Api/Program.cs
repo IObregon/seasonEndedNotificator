@@ -25,29 +25,7 @@ builder.Services
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.LoginPath = "/api/auth/magic-link";
-        options.Events.OnValidatePrincipal = async context =>
-        {
-            var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-            var policy = context.HttpContext.RequestServices.GetRequiredService<ActiveUserPolicy>();
-            if (Guid.TryParse(idValue, out var userId) && await policy.CanUseSessionAsync(userId))
-            {
-                var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-                var user = await db.Users.FindAsync(userId);
-                var roleClaim = context.Principal!.FindFirst(ClaimTypes.Role);
-                if (roleClaim?.Value != user!.Role.ToString())
-                {
-                    var identity = (ClaimsIdentity)context.Principal.Identity!;
-                    if (roleClaim is not null)
-                        identity.RemoveClaim(roleClaim);
-                    identity.AddClaim(new Claim(ClaimTypes.Role, user.Role.ToString()));
-                    context.ShouldRenew = true;
-                }
-                return;
-            }
-
-            context.RejectPrincipal();
-            await context.HttpContext.SignOutAsync();
-        };
+        options.Events.OnValidatePrincipal = SessionValidation.ValidateAsync;
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ActiveUserPolicy>();
