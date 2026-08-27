@@ -15,19 +15,36 @@ type ShowDetailsData = {
   }>
 }
 
+type FollowedShowData = {
+  providerId: number
+  title: string
+  status: string
+}
+
 const selectedShow = ref<ShowDetailsData | null>(null)
 const detailsError = ref(false)
-const followedShows = ref<ShowDetailsData[]>([])
+const followedShows = ref<FollowedShowData[]>([])
 
 async function loadDetails(providerId: number) {
   const response = await fetch(`/api/shows/${providerId}`)
-  detailsError.value = !response.ok
-  selectedShow.value = response.ok ? await response.json() : null
+  if (!response.ok) {
+    detailsError.value = true
+    selectedShow.value = null
+    return
+  }
+
+  detailsError.value = false
+  selectedShow.value = await response.json()
 }
 
 async function loadFollows() {
   const response = await fetch('/api/follows')
-  followedShows.value = response.ok ? await response.json() : []
+  if (!response.ok) {
+    followedShows.value = []
+    return
+  }
+
+  followedShows.value = await response.json()
 }
 </script>
 

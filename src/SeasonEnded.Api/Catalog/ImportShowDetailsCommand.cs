@@ -29,13 +29,12 @@ public sealed class ImportShowDetailsCommand(
         show.Seasons.Clear();
         var newSeasons = imported.Seasons.Select(season => new Season
         {
-            ShowId = show.Id,
+            Show = show,
             ProviderSeasonId = season.ProviderSeasonId,
             Number = season.Number,
             PremiereDate = season.PremiereDate,
             EndDate = season.EndDate
         }).ToList();
-        show.Seasons.AddRange(newSeasons);
         context.Seasons.AddRange(newSeasons);
 
         await context.SaveChangesAsync(cancellationToken);
