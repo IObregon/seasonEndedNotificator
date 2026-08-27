@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
+using SeasonEnded.Api.Identity;
 using System.Net.Mail;
 
 var builder = WebApplication.CreateBuilder(args);
 var postgresConnection = builder.Configuration.GetConnectionString("Postgres")
     ?? throw new InvalidOperationException("ConnectionStrings:Postgres is required");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(postgresConnection));
 
 builder.Services
     .AddHealthChecks()
@@ -27,6 +32,21 @@ else
 }
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    var bootstrapEmail = builder.Configuration["BootstrapAdmin:Email"];
+    if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.EnsureCreatedAsync();
+        var command = new BootstrapAdminCommand(db);
+        var result = await command.ExecuteAsync(bootstrapEmail);
+        if (result.Created)
+            app.Logger.LogInformation("Bootstrapped admin {Email}", bootstrapEmail);
+    }
+}
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {

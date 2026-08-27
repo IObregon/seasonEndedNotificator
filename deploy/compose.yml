@@ -29,6 +29,7 @@ services:
       Email__Smtp__UseTls: "false"
       Email__Smtp__FromAddress: notifications@season-ended.local
       Email__Smtp__FromName: Season Ended
+      BootstrapAdmin__Email: admin@localhost
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SeasonEnded.Api.Identity;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -56,6 +58,11 @@ public sealed class DevelopmentEmailEndpointTests
             {
                 builder.UseEnvironment(environment);
                 builder.UseSetting("ConnectionStrings:Postgres", "Host=127.0.0.1;Port=1;Database=seasonended;Username=app;Timeout=1");
-                builder.ConfigureTestServices(services => services.AddSingleton(sender));
+                builder.UseSetting("BootstrapAdmin:Email", "");
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("email-test"));
+                    services.AddSingleton(sender);
+                });
             });
 }

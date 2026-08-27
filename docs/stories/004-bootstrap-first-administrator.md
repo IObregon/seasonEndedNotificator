@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Deployment command creates one active admin from configured email.
-- Repeating command is idempotent.
-- Seeded admin can request authentication.
-- No general registration endpoint exists.
+- [x] Deployment command creates one active admin from configured email.
+- [x] Repeating command is idempotent.
+- [x] Seeded admin can request authentication.
+- [x] No general registration endpoint exists.
 
 ## Dependencies
 
@@ -67,7 +67,11 @@
 
 ## Completion Checklist
 
-- [ ] Command creates exactly one active admin.
-- [ ] Repeated execution is idempotent.
-- [ ] Seeded admin can request authentication.
-- [ ] No general registration endpoint exists.
+- [x] Command creates exactly one active admin.
+- [x] Repeated execution is idempotent.
+- [x] Seeded admin can request authentication.
+- [x] No general registration endpoint exists.
+
+## Result
+
+Completed on `2026-08-27`. `BootstrapAdminCommand` creates one active admin from configured email with idempotent re-execution. EF Core `AppDbContext` persists users with unique email and role. Development startup seeds admin from `BootstrapAdmin:Email` configuration. Production override does not seed. No registration endpoint exists.
