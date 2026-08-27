@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { searchShows, type SearchState, type ShowResult } from '../showSearch'
 
+const emit = defineEmits<{ select: [providerId: number] }>()
+
 const query = ref('')
 const results = ref<ShowResult[]>([])
 const state = ref<SearchState | 'loading'>('idle')
@@ -34,7 +36,7 @@ async function search() {
     <p v-if="state === 'error'">Search is unavailable. Try again.</p>
 
     <ul v-if="results.length" class="results">
-      <li v-for="show in results" :key="show.providerId">
+      <li v-for="show in results" :key="show.providerId" @click="emit('select', show.providerId)">
         <img v-if="show.imageUrl" :src="show.imageUrl" :alt="`${show.title} poster`" />
         <div v-else class="poster-placeholder" aria-hidden="true">No image</div>
         <div>

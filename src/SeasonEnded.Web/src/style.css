@@ -104,6 +104,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 1rem;
+  cursor: pointer;
 }
 
 .results img,
@@ -112,6 +113,24 @@ h1 {
   height: 5rem;
   border-radius: 0.25rem;
   object-fit: cover;
+}
+
+.show-details {
+  width: min(42rem, 100%);
+  margin-top: 3rem;
+}
+
+.show-details ul {
+  padding: 0;
+  list-style: none;
+}
+
+.show-details li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #52615a;
 }
 
 .poster-placeholder {

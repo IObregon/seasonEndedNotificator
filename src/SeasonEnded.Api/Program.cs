@@ -34,6 +34,11 @@ builder.Services.AddHttpClient<ITvShowSearch, TvmazeShowSearch>(client =>
     client.BaseAddress = new Uri("https://api.tvmaze.com");
     client.DefaultRequestHeaders.UserAgent.ParseAdd("SeasonEnded/1.0");
 });
+builder.Services.AddHttpClient<ITvShowDetails, TvmazeShowDetails>(client =>
+{
+    client.BaseAddress = new Uri("https://api.tvmaze.com");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("SeasonEnded/1.0");
+});
 
 builder.Services
     .AddHealthChecks()
@@ -323,6 +328,40 @@ app.MapGet("/api/shows/search", async (
     }
 }).RequireAuthorization();
 
+app.MapGet("/api/shows/{providerId:int}", async (
+    int providerId,
+    AppDbContext db,
+    ITvShowDetails provider,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var show = await new ImportShowDetailsCommand(db, provider)
+            .ExecuteAsync(providerId, cancellationToken);
+        return Results.Ok(new ShowDetailsResponse(
+            show.ProviderId,
+            show.Title,
+            show.PremiereYear,
+            show.Status,
+            show.ImageUrl,
+            show.Seasons
+                .OrderBy(season => season.Number)
+                .Select(season => new SeasonResponse(
+                    season.Number,
+                    season.PremiereDate,
+                    season.EndDate))));
+    }
+    catch (TvShowNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (HttpRequestException)
+    {
+        return Results.Problem("Show details are temporarily unavailable.",
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;
@@ -335,3 +374,11 @@ public sealed record ConsumeMagicLinkRequest(string Token);
 public sealed record SetLanguageRequest(string Language);
 public sealed record ChangeRoleRequest(string Role);
 public sealed record DeleteAccountRequest(string Confirmation);
+public sealed record ShowDetailsResponse(
+    int ProviderId,
+    string Title,
+    int? PremiereYear,
+    string Status,
+    string? ImageUrl,
+    IEnumerable<SeasonResponse> Seasons);
+public sealed record SeasonResponse(int Number, DateOnly? PremiereDate, DateOnly? EndDate);

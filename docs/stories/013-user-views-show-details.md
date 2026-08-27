@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Selecting search result imports and displays normalized show metadata.
-- Regular numbered seasons and known dates are shown.
-- Specials are visually excluded from tracked seasons.
-- Provider failure does not corrupt previously stored data.
+- [x] Selecting search result imports and displays normalized show metadata.
+- [x] Regular numbered seasons and known dates are shown.
+- [x] Specials are visually excluded from tracked seasons.
+- [x] Provider failure does not corrupt previously stored data.
 
 ## Dependencies
 
@@ -63,6 +63,10 @@
 
 ## Completion Checklist
 
-- [ ] Import and display paths use normalized data.
-- [ ] Failure-preservation test passes.
-- [ ] Specials remain excluded.
+- [x] Import and display paths use normalized data.
+- [x] Failure-preservation test passes.
+- [x] Specials remain excluded.
+
+## Result
+
+Completed on `2026-08-27`. TVmaze show and season payloads are normalized behind `ITvShowDetails`; season zero is excluded before persistence. Successful imports replace stored metadata in one save, while provider failure occurs before mutation. Authenticated detail endpoint returns normalized show/seasons, and selecting a search result renders known dates with missing-date fallbacks.

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SeasonEnded.Api.Catalog;
 
 namespace SeasonEnded.Api.Identity;
 
@@ -8,6 +9,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<MagicLinkToken> MagicLinkTokens => Set<MagicLinkToken>();
     public DbSet<RoleChangeAudit> RoleChangeAudits => Set<RoleChangeAudit>();
+    public DbSet<Show> Shows => Set<Show>();
+    public DbSet<Season> Seasons => Set<Season>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -55,6 +58,24 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasKey(audit => audit.Id);
             entity.Property(audit => audit.PreviousRole).HasConversion<string>();
             entity.Property(audit => audit.NewRole).HasConversion<string>();
+        });
+
+        modelBuilder.Entity<Show>(entity =>
+        {
+            entity.HasKey(show => show.Id);
+            entity.HasIndex(show => show.ProviderId).IsUnique();
+            entity.Property(show => show.Title).IsRequired();
+            entity.Property(show => show.Status).IsRequired();
+            entity.HasMany(show => show.Seasons)
+                .WithOne(season => season.Show)
+                .HasForeignKey(season => season.ShowId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Season>(entity =>
+        {
+            entity.HasKey(season => season.Id);
+            entity.HasIndex(season => season.ProviderSeasonId).IsUnique();
         });
 
     }
