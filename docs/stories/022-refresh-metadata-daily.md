@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Hosted job refreshes followed airing shows at configured UTC time.
-- Persisted lease prevents concurrent duplicate run.
-- TVmaze rate limits and transient failures are respected.
-- Job execution and last success are recorded.
+- [x] Hosted job refreshes followed airing shows at configured UTC time when enabled.
+- [x] Persisted lease prevents concurrent duplicate run.
+- [x] TVmaze rate limits and transient failures are respected.
+- [x] Job execution and last success are recorded.
 
 ## Dependencies
 
@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Scheduler remains configurable and has a tested kill switch.
-- [ ] Lease, provider pacing, execution status, and last success are verified.
+- [x] Scheduler remains configurable and has a tested kill switch.
+- [x] Lease, provider pacing, execution status, and last success are verified.
 - [ ] First production run completes without duplicate refresh.
+
+## Result
+
+Implementation completed on `2026-08-27`; production rollout remains disabled pending the required staging observation. Manual refresh updates each distinct followed running show once. Persisted leases recover after expiry and prevent overlapping owners. Execution status records completed/partial/failed outcomes. Hosted scheduler is disabled by default, configurable by UTC hour, and runs once per UTC day when enabled. TVmaze calls are sequential and retry one rate-limit or transient server response with bounded delay.

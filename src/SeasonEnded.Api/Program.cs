@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Data;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.Catalog;
+using SeasonEnded.Api.Jobs;
 using System.Net.Mail;
 using System.Security.Claims;
 
@@ -29,16 +30,27 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ActiveUserPolicy>();
+builder.Services.AddSingleton<IRetryDelay, RetryDelay>();
+builder.Services.AddTransient<TvmazeRetryHandler>();
 builder.Services.AddHttpClient<ITvShowSearch, TvmazeShowSearch>(client =>
 {
     client.BaseAddress = new Uri("https://api.tvmaze.com");
     client.DefaultRequestHeaders.UserAgent.ParseAdd("SeasonEnded/1.0");
-});
+}).AddHttpMessageHandler<TvmazeRetryHandler>();
 builder.Services.AddHttpClient<ITvShowDetails, TvmazeShowDetails>(client =>
 {
     client.BaseAddress = new Uri("https://api.tvmaze.com");
     client.DefaultRequestHeaders.UserAgent.ParseAdd("SeasonEnded/1.0");
-});
+}).AddHttpMessageHandler<TvmazeRetryHandler>();
+builder.Services.AddScoped<IFollowedShowRefresh, RefreshFollowedShowsCommand>();
+builder.Services.AddScoped<DailyMetadataRefreshJob>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services
+    .AddOptions<MetadataRefreshOptions>()
+    .BindConfiguration(MetadataRefreshOptions.SectionName)
+    .Validate(options => options.HourUtc is >= 0 and <= 23, "MetadataRefresh:HourUtc must be 0-23")
+    .ValidateOnStart();
+builder.Services.AddHostedService<MetadataRefreshHostedService>();
 
 builder.Services
     .AddHealthChecks()

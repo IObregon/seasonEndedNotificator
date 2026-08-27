@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.SeasonTracking;
+using SeasonEnded.Api.Jobs;
 
 namespace SeasonEnded.Api.Identity;
 
@@ -14,6 +15,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Season> Seasons => Set<Season>();
     public DbSet<ShowFollow> ShowFollows => Set<ShowFollow>();
     public DbSet<SeasonCompletionEvent> SeasonCompletionEvents => Set<SeasonCompletionEvent>();
+    public DbSet<JobLease> JobLeases => Set<JobLease>();
+    public DbSet<JobExecution> JobExecutions => Set<JobExecution>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -93,6 +96,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasKey(completion => completion.Id);
             entity.HasIndex(completion => completion.SeasonId).IsUnique();
         });
+
+        modelBuilder.Entity<JobLease>().HasKey(lease => lease.Name);
+        modelBuilder.Entity<JobExecution>().HasKey(execution => execution.Id);
 
     }
 
