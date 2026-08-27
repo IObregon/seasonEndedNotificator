@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Backend queries TVmaze through anti-corruption layer.
-- Result shows title, premiere year, status, and image when available.
-- TVmaze DTOs do not enter Domain.
-- Empty, failed, and rate-limited searches have clear states.
+- [x] Backend queries TVmaze through anti-corruption layer.
+- [x] Result shows title, premiere year, status, and image when available.
+- [x] TVmaze DTOs do not enter Domain.
+- [x] Empty, failed, and rate-limited searches have clear states.
 
 ## Dependencies
 
@@ -58,6 +58,10 @@
 
 ## Completion Checklist
 
-- [ ] All four search states pass automated tests.
-- [ ] Domain has no TVmaze DTO dependency.
-- [ ] Search flow works for a signed-in user.
+- [x] All four search states pass automated tests.
+- [x] Domain has no TVmaze DTO dependency.
+- [x] Search flow is exposed only to signed-in users.
+
+## Result
+
+Completed on `2026-08-27`. Authenticated show search calls TVmaze through `ITvShowSearch`; provider DTOs remain private inside `TvmazeShowSearch`. API returns provider-independent title, premiere year, status, and optional image, with distinct validation, rate-limit, and unavailable responses. Vue search UI renders result, missing-image, empty, rate-limited, and failure states.

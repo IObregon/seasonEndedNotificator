@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using SeasonEnded.Api.Identity;
+using SeasonEnded.Api.Catalog;
 using System.Net.Mail;
 using System.Security.Claims;
 
@@ -50,6 +51,11 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ActiveUserPolicy>();
+builder.Services.AddHttpClient<ITvShowSearch, TvmazeShowSearch>(client =>
+{
+    client.BaseAddress = new Uri("https://api.tvmaze.com");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("SeasonEnded/1.0");
+});
 
 builder.Services
     .AddHealthChecks()
@@ -310,6 +316,33 @@ app.MapDelete("/api/me", async (
         RequestAccountDeletionResult.LastActiveAdmin => Results.Conflict(new { message = "Transfer admin responsibility before deleting this account." }),
         _ => Results.NotFound()
     };
+}).RequireAuthorization();
+
+app.MapGet("/api/shows/search", async (
+    string? query,
+    ITvShowSearch search,
+    CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(query))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(query)] = ["Search query is required."]
+        });
+
+    try
+    {
+        return Results.Ok(await search.SearchAsync(query.Trim(), cancellationToken));
+    }
+    catch (TvSearchRateLimitedException)
+    {
+        return Results.Problem("TV search rate limit reached. Try again shortly.",
+            statusCode: StatusCodes.Status429TooManyRequests);
+    }
+    catch (TvSearchUnavailableException)
+    {
+        return Results.Problem("TV search is temporarily unavailable.",
+            statusCode: StatusCodes.Status502BadGateway);
+    }
 }).RequireAuthorization();
 
 app.Run();
