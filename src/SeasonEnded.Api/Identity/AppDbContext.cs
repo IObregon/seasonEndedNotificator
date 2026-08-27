@@ -56,6 +56,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(audit => audit.PreviousRole).HasConversion<string>();
             entity.Property(audit => audit.NewRole).HasConversion<string>();
         });
+
     }
 
     private void EnsureAuditsAreAppendOnly()

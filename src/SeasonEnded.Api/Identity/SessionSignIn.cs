@@ -18,7 +18,8 @@ public static class SessionSignIn
         {
             new(ClaimTypes.NameIdentifier, userId.ToString()),
             new(ClaimTypes.Email, email),
-            new(ClaimTypes.Role, role.ToString())
+            new(ClaimTypes.Role, role.ToString()),
+            new("authenticated_at", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);

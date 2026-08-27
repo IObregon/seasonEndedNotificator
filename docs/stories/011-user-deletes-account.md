@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Recent authentication and explicit confirmation are required.
-- Sessions, tokens, follows, preferences, and channel connections are removed.
-- Operational records are deleted or anonymized.
-- Last active admin cannot self-delete without transferring admin responsibility.
+- [x] Recent authentication and explicit confirmation are required.
+- [ ] Sessions, tokens, follows, preferences, and channel connections are removed.
+- [ ] Operational records are deleted or anonymized.
+- [x] Last active admin cannot self-delete without transferring admin responsibility.
 
 ## Dependencies
 
@@ -90,8 +90,14 @@
 
 ## Completion Checklist
 
-- [ ] Recent authentication and explicit confirmation are required.
-- [ ] Last active admin must transfer responsibility first.
+- [x] Recent authentication and explicit confirmation are required.
+- [x] Last active admin must transfer responsibility first.
 - [ ] Sessions, tokens, product data, preferences, and connections are removed.
 - [ ] Retained operational records contain no user identity.
 - [ ] Retry and verification prove deletion is scoped and complete.
+
+## Partial Result
+
+Safe reversible slice completed on `2026-08-27`. Authenticated `DELETE /api/me` requires exact confirmation and authentication within 10 minutes. Eligible accounts enter `PendingDeletion`, lose invitation and magic-link credentials, are signed out, and fail future session or authentication checks. Last active admin is rejected and repeated requests are idempotent.
+
+Destructive erasure and audit anonymization remain blocked by Story 038. The stop condition requires a tested restorable backup before irreversible deletion. Current user schema has no follows or channel connections yet; those future tables must join the deletion matrix before finalization.

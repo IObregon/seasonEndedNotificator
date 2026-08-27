@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using SeasonEnded.Api.Identity;
@@ -278,6 +279,39 @@ app.MapPut("/api/admin/users/{targetId:guid}/role", async (
     };
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapDelete("/api/me", async (
+    [FromBody] DeleteAccountRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (request?.Confirmation != "DELETE MY ACCOUNT")
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(DeleteAccountRequest.Confirmation)] = ["Confirmation must be 'DELETE MY ACCOUNT'."]
+        });
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+    if (!long.TryParse(httpContext.User.FindFirstValue("authenticated_at"), out var authenticatedAt) ||
+        DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(authenticatedAt) > TimeSpan.FromMinutes(10))
+        return Results.Problem("Recent authentication is required.", statusCode: StatusCodes.Status403Forbidden);
+
+    await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+    var result = await new RequestAccountDeletionCommand(db).ExecuteAsync(userId);
+    if (result == RequestAccountDeletionResult.Pending)
+    {
+        await transaction.CommitAsync();
+        await httpContext.SignOutAsync();
+    }
+
+    return result switch
+    {
+        RequestAccountDeletionResult.Pending => Results.Accepted(),
+        RequestAccountDeletionResult.AlreadyPending => Results.Accepted(),
+        RequestAccountDeletionResult.LastActiveAdmin => Results.Conflict(new { message = "Transfer admin responsibility before deleting this account." }),
+        _ => Results.NotFound()
+    };
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;
@@ -289,3 +323,4 @@ public sealed record MagicLinkRequest(string Email);
 public sealed record ConsumeMagicLinkRequest(string Token);
 public sealed record SetLanguageRequest(string Language);
 public sealed record ChangeRoleRequest(string Role);
+public sealed record DeleteAccountRequest(string Confirmation);
