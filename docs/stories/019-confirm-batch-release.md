@@ -4,10 +4,10 @@
 
 ## Acceptance Criteria
 
-- Complete batch is represented as completion evidence.
-- Release date uses same original-zone date-ending rule.
-- Partial episode drops do not qualify.
-- Result emits at most one completion event.
+- [x] Complete batch is represented as completion evidence.
+- [x] Release date uses same original-zone date-ending rule.
+- [x] Partial episode drops do not qualify.
+- [x] Result emits at most one completion event.
 
 ## Dependencies
 
@@ -63,6 +63,10 @@
 
 ## Completion Checklist
 
-- [ ] Partial drops never qualify.
-- [ ] Release-date boundary tests pass.
-- [ ] Batch completion emits at most once.
+- [x] Partial drops never qualify.
+- [x] Release-date boundary tests pass.
+- [x] Batch completion emits at most once.
+
+## Result
+
+Completed on `2026-08-27`. Batch evidence requires explicit full-season classification, positive expected count, and released count exactly matching expected count. Eligibility reuses Story 018's original-zone next-midnight boundary. Partial, split, and ambiguous releases stay unconfirmed; complete batches enter the existing atomic exactly-once completion transition.

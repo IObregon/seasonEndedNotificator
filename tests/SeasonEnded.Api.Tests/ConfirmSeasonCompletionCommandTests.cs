@@ -76,6 +76,32 @@ public sealed class ConfirmSeasonCompletionCommandTests
         Assert.Single(context.SeasonCompletionEvents);
     }
 
+    [Fact]
+    public async Task Complete_batch_emits_once_while_partial_batch_emits_none()
+    {
+        await using var context = CreateContext();
+        var show = new Show { ProviderId = 82, Title = "Batch Show", Status = "Running" };
+        var partialSeason = new Season { Show = show, ProviderSeasonId = 1, Number = 1 };
+        var completeSeason = new Season { Show = show, ProviderSeasonId = 2, Number = 2 };
+        show.Seasons.AddRange([partialSeason, completeSeason]);
+        context.Shows.Add(show);
+        await context.SaveChangesAsync();
+        var now = new DateTimeOffset(2026, 8, 28, 0, 0, 0, TimeSpan.Zero);
+        var partial = new BatchReleaseEvidence(1, true, 4, 8, new DateOnly(2026, 8, 27), "UTC");
+        var complete = new BatchReleaseEvidence(2, true, 8, 8, new DateOnly(2026, 8, 27), "UTC");
+        var command = new ConfirmSeasonCompletionCommand(context);
+
+        var partialResult = await command.ExecuteAsync(partialSeason.Id, partial, now);
+        var completeResult = await command.ExecuteAsync(completeSeason.Id, complete, now);
+        var repeated = await command.ExecuteAsync(completeSeason.Id, complete, now.AddHours(1));
+
+        Assert.False(partialResult.Created);
+        Assert.True(completeResult.Created);
+        Assert.False(repeated.Created);
+        var completion = Assert.Single(context.SeasonCompletionEvents);
+        Assert.Equal(completeSeason.Id, completion.SeasonId);
+    }
+
     private static AppDbContext CreateContext() => new(
         new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

@@ -49,6 +49,29 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
         await context.SaveChangesAsync();
         return new ConfirmSeasonCompletionResult(Created: true);
     }
+
+    public async Task<ConfirmSeasonCompletionResult> ExecuteAsync(
+        Guid seasonId,
+        BatchReleaseEvidence evidence,
+        DateTimeOffset now)
+    {
+        var season = await context.Seasons.FindAsync(seasonId);
+        if (season is null || season.CompletedAt is not null)
+            return new ConfirmSeasonCompletionResult(Created: false);
+        if (season.Number != evidence.SeasonNumber ||
+            !BatchCompletionPolicy.IsEligible(evidence, now))
+            return new ConfirmSeasonCompletionResult(Created: false);
+
+        var completedAt = BatchCompletionPolicy.CompletionTime(evidence);
+        season.CompletedAt = completedAt;
+        context.SeasonCompletionEvents.Add(new SeasonCompletionEvent
+        {
+            SeasonId = seasonId,
+            CompletedAt = completedAt
+        });
+        await context.SaveChangesAsync();
+        return new ConfirmSeasonCompletionResult(Created: true);
+    }
 }
 
 public sealed record ConfirmSeasonCompletionResult(bool Created);
