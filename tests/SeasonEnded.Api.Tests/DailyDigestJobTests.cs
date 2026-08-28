@@ -87,6 +87,7 @@ public sealed class DailyDigestJobTests
             options.UseInMemoryDatabase(dbName)
                 .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
         services.AddSingleton<IEmailSender>(sender);
+        services.AddSingleton<ITelegramSender, UnconfiguredTelegramSender>();
         services.AddScoped<PrepareDigestCommand>();
         services.AddScoped<SendDigestCommand>();
         services.AddScoped<DailyDigestJob>();

@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Telegram eligibility reuses existing digest grouping rules.
-- [ ] Localized message and provider message ID are verified.
-- [ ] Unique delivery identity prevents duplicate messages.
+- [x] Telegram eligibility reuses existing digest grouping rules.
+- [x] Localized message and provider message ID are verified.
+- [x] Unique delivery identity prevents duplicate messages.
+
+## Result
+
+Completed on `2026-08-28`. `TelegramRecipientQuery` selects users with Telegram enabled and connected. `PrepareDigestCommand` now prepares both Email and Telegram channel deliveries, reusing `DigestEligibilityQuery`. `SendDigestCommand` dispatches to `ITelegramSender` for Telegram deliveries or `IEmailSender` for email. `TelegramDigestMessages.Create` builds localized Markdown text. Unique (UserId, Channel, DigestDate) prevents duplicate Telegram deliveries.

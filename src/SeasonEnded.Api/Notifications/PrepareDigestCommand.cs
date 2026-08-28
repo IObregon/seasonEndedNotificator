@@ -7,16 +7,36 @@ public sealed class PrepareDigestCommand(AppDbContext context)
 {
     public async Task<List<DigestDelivery>> ExecuteAsync(DateOnly digestDate, CancellationToken cancellationToken = default)
     {
-        var recipients = await new EmailRecipientQuery(context).GetAsync();
         var results = new List<DigestDelivery>();
 
-        foreach (var user in recipients)
+        results.AddRange(await PrepareChannelAsync(
+            "Email", digestDate,
+            (await new EmailRecipientQuery(context).GetAsync()).Select(u => u.Id).ToList(),
+            cancellationToken));
+
+        results.AddRange(await PrepareChannelAsync(
+            "Telegram", digestDate,
+            (await new TelegramRecipientQuery(context).GetAsync()).Select(r => r.UserId).ToList(),
+            cancellationToken));
+
+        return results;
+    }
+
+    private async Task<List<DigestDelivery>> PrepareChannelAsync(
+        string channel,
+        DateOnly digestDate,
+        List<Guid> userIds,
+        CancellationToken cancellationToken)
+    {
+        var results = new List<DigestDelivery>();
+
+        foreach (var userId in userIds)
         {
             var existing = await context.DigestDeliveries
                 .Include(d => d.Items)
                 .FirstOrDefaultAsync(d =>
-                    d.UserId == user.Id &&
-                    d.Channel == "Email" &&
+                    d.UserId == userId &&
+                    d.Channel == channel &&
                     d.DigestDate == digestDate, cancellationToken);
 
             if (existing is not null)
@@ -26,15 +46,15 @@ public sealed class PrepareDigestCommand(AppDbContext context)
             }
 
             var candidates = await new DigestEligibilityQuery(context)
-                .ForUserAsync(user.Id, digestDate);
+                .ForUserAsync(userId, digestDate);
 
             if (candidates.Count == 0)
                 continue;
 
             var delivery = new DigestDelivery
             {
-                UserId = user.Id,
-                Channel = "Email",
+                UserId = userId,
+                Channel = channel,
                 DigestDate = digestDate,
                 Status = "Pending"
             };

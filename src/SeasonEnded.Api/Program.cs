@@ -85,6 +85,8 @@ else
     builder.Services.AddSingleton<IEmailSender, UnconfiguredEmailSender>();
 }
 
+builder.Services.AddSingleton<ITelegramSender, UnconfiguredTelegramSender>();
+
 var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -493,6 +495,7 @@ app.MapGet("/api/admin/metadata/issues", async (AppDbContext db) =>
 app.MapPost("/api/admin/digests/send", async (
     AppDbContext db,
     IEmailSender emailSender,
+    ITelegramSender telegramSender,
     CancellationToken cancellationToken) =>
 {
     var digestDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
@@ -501,7 +504,7 @@ app.MapPost("/api/admin/digests/send", async (
 
     foreach (var delivery in prepared)
     {
-        var result = await new SendDigestCommand(db, emailSender)
+        var result = await new SendDigestCommand(db, emailSender, telegramSender)
             .ExecuteAsync(delivery.Id, cancellationToken);
         results.Add(new { deliveryId = delivery.Id, sent = result.Sent, reason = result.Reason });
     }
@@ -513,9 +516,10 @@ app.MapPost("/api/admin/digests/{deliveryId:guid}/retry", async (
     Guid deliveryId,
     AppDbContext db,
     IEmailSender emailSender,
+    ITelegramSender telegramSender,
     CancellationToken cancellationToken) =>
 {
-    var result = await new SendDigestCommand(db, emailSender)
+    var result = await new SendDigestCommand(db, emailSender, telegramSender)
         .ExecuteAsync(deliveryId, cancellationToken);
     return Results.Ok(new { sent = result.Sent, reason = result.Reason });
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));

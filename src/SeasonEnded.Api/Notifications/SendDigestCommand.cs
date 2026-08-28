@@ -5,7 +5,7 @@ using SeasonEnded.Api.SeasonTracking;
 
 namespace SeasonEnded.Api.Notifications;
 
-public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender)
+public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender)
 {
     public async Task<SendDigestResult> ExecuteAsync(Guid deliveryId, CancellationToken cancellationToken = default)
     {
@@ -51,8 +51,25 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
 
         try
         {
-            var message = DigestMessages.Create(user.PreferredLanguage, user.Email, candidates);
-            await emailSender.SendAsync(message, cancellationToken);
+            if (deliveryDto.Channel == "Telegram")
+            {
+                var dest = await context.TelegramDestinations
+                    .FirstOrDefaultAsync(d => d.UserId == deliveryDto.UserId, cancellationToken);
+                if (dest is null)
+                {
+                    await UpdateDeliveryStatusAsync(context, deliveryId, "Skipped", null, cancellationToken);
+                    return new SendDigestResult(Sent: false, Reason: "NoTelegramDestination");
+                }
+
+                var text = TelegramDigestMessages.Create(user.PreferredLanguage, candidates);
+                await telegramSender.SendAsync(dest.ChatId, text, cancellationToken);
+            }
+            else
+            {
+                var message = DigestMessages.Create(user.PreferredLanguage, user.Email, candidates);
+                await emailSender.SendAsync(message, cancellationToken);
+            }
+
             outcome = DeliveryOutcome.Succeeded;
         }
         catch (Exception ex) when (ex is HttpRequestException or TimeoutException)
@@ -101,9 +118,7 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
     {
         var tracked = context.DigestDeliveries.Local.FirstOrDefault(d => d.Id == deliveryId);
         if (tracked is not null)
-        {
             context.Entry(tracked).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
-        }
 
         var delivery = await context.DigestDeliveries.FindAsync([deliveryId], cancellationToken);
         if (delivery is not null)
