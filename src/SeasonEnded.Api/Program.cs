@@ -547,6 +547,24 @@ app.MapGet("/api/admin/delivery-failures", async (
     return Results.Ok(new { total, page, pageSize, deliveries });
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapPost("/api/admin/shows/{providerId:int}/refresh", async (
+    int providerId,
+    AppDbContext db,
+    ITvShowDetails provider,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        await new ImportShowDetailsCommand(db, provider)
+            .ExecuteAsync(providerId, cancellationToken);
+        return Results.Ok(new { providerId, refreshed = true });
+    }
+    catch (Exception ex)
+    {
+        return Results.Ok(new { providerId, refreshed = false, error = ex.Message.Length > 200 ? ex.Message[..200] : ex.Message });
+    }
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.MapPost("/api/admin/digests/send", async (
     AppDbContext db,
     IEmailSender emailSender,

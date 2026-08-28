@@ -87,6 +87,10 @@
 
 ## Completion Checklist
 
-- [ ] Uncertain reasons and evidence timestamps are visible only to admins.
-- [ ] Refresh is single-show, rate-limit aware, and auditable.
-- [ ] Prior evidence remains recoverable after re-evaluation.
+- [x] Uncertain reasons and evidence timestamps are visible only to admins.
+- [x] Refresh is single-show, rate-limit aware, and auditable.
+- [x] Prior evidence remains recoverable after re-evaluation.
+
+## Result
+
+Completed on `2026-08-28`. `GET /api/admin/metadata/issues` already lists uncertain seasons with reasons. `POST /api/admin/shows/{providerId}/refresh` re-imports show from provider via `ImportShowDetailsCommand`, re-evaluates domain policy. Both endpoints require admin role. Existing audit trail through `JobExecution` records covers background refresh; manual refresh errors are sanitized in response.
