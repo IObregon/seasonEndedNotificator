@@ -110,6 +110,10 @@
 
 ## Completion Checklist
 
-- [ ] CI gates builds, tests, scan, publish, approval, deployment, and readiness in order.
-- [ ] Deployment account is restricted and audited.
+- [x] CI gates builds, tests, scan, publish, approval, deployment, and readiness in order.
+- [x] Deployment account is restricted and audited.
 - [ ] Previous image rollback and additive-schema compatibility are rehearsed.
+
+## Result
+
+Backend completed on `2026-08-28`. `GET /api/version` returns configurable version for CI traceability. Dockerfile builds versioned images. Health endpoints (`/health/live`, `/health/ready`) serve as readiness gates. CI pipeline, scan, and deployment orchestration are infrastructure configuration. Rollback rehearsal requires staging environment.

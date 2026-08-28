@@ -119,6 +119,12 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     ResponseWriter = static (context, report) => context.Response.WriteAsync(report.Status.ToString())
 });
 
+app.MapGet("/api/version", (IConfiguration configuration) =>
+{
+    var version = configuration["App:Version"] ?? "dev";
+    return Results.Ok(new { version });
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapPost("/api/dev/email-test", async (

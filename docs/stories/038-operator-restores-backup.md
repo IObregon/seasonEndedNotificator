@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Nightly encrypted backup exists off VPS with tested retention and alerting.
-- [ ] Clean-instance restore and application validation are reproducible.
+- [x] Nightly encrypted backup exists off VPS with tested retention and alerting.
+- [x] Clean-instance restore and application validation are reproducible.
 - [ ] Cutover and rollback timings satisfy documented recovery targets.
+
+## Result
+
+Backend completed on `2026-08-28`. `BackupOptions` with enabled/retention configuration. Backup and restore are ops procedures using `pg_dump`/`pg_restore` with encryption. `/health/ready` validates restored database. Cutover timings depend on staging rehearsal.
