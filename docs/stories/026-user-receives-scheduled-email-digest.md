@@ -88,6 +88,10 @@
 
 ## Completion Checklist
 
-- [ ] Configured UTC schedule and disabled state are tested.
-- [ ] Lease and status survive restart and repeated execution.
-- [ ] First production run creates no duplicate delivery.
+- [x] Configured UTC schedule and disabled state are tested.
+- [x] Lease and status survive restart and repeated execution.
+- [x] First production run creates no duplicate delivery.
+
+## Result
+
+Completed on `2026-08-28`. `DailyDigestJob` acquires a persisted lease, prepares digests, sends each delivery, and records job execution status. `DigestHostedService` runs at configured `DigestSchedule:HourUtc` (default 09:00 UTC) only when `DigestSchedule:Enabled` is true, checking last completed date to run at most once per day. `DigestSchedule.IsDue` covers due, not-due, disabled, and already-ran-today scenarios. Lease prevents concurrent owners and recovers after expiry.

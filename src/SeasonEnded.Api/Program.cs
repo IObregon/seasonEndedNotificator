@@ -52,6 +52,15 @@ builder.Services
     .Validate(options => options.HourUtc is >= 0 and <= 23, "MetadataRefresh:HourUtc must be 0-23")
     .ValidateOnStart();
 builder.Services.AddHostedService<MetadataRefreshHostedService>();
+builder.Services.AddScoped<DailyDigestJob>();
+builder.Services.AddScoped<PrepareDigestCommand>();
+builder.Services.AddScoped<SendDigestCommand>();
+builder.Services
+    .AddOptions<DigestScheduleOptions>()
+    .BindConfiguration(DigestScheduleOptions.SectionName)
+    .Validate(options => options.HourUtc is >= 0 and <= 23, "DigestSchedule:HourUtc must be 0-23")
+    .ValidateOnStart();
+builder.Services.AddHostedService<DigestHostedService>();
 
 builder.Services
     .AddHealthChecks()
