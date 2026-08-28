@@ -494,6 +494,59 @@ app.MapGet("/api/admin/metadata/issues", async (AppDbContext db) =>
     return Results.Ok(issues);
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapGet("/api/admin/delivery-failures", async (
+    AppDbContext db,
+    string? channel,
+    string? status,
+    DateOnly? fromDate,
+    DateOnly? toDate,
+    int page = 1,
+    int pageSize = 20,
+    CancellationToken cancellationToken = default) =>
+{
+    if (page < 1) page = 1;
+    if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+    var query = db.DigestDeliveries
+        .Include(d => d.Attempts)
+        .Where(d => d.Status == "Failed" || d.Status == "PermanentlyFailed");
+
+    if (!string.IsNullOrEmpty(channel))
+        query = query.Where(d => d.Channel == channel);
+    if (!string.IsNullOrEmpty(status))
+        query = query.Where(d => d.Status == status);
+    if (fromDate.HasValue)
+        query = query.Where(d => d.DigestDate >= fromDate.Value);
+    if (toDate.HasValue)
+        query = query.Where(d => d.DigestDate <= toDate.Value);
+
+    var total = await query.CountAsync(cancellationToken);
+    var deliveries = await query
+        .OrderByDescending(d => d.CreatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .Select(d => new
+        {
+            d.Id,
+            d.UserId,
+            d.Channel,
+            d.DigestDate,
+            d.Status,
+            d.NextAttemptAt,
+            d.CreatedAt,
+            Attempts = d.Attempts.Select(a => new
+            {
+                a.AttemptNumber,
+                a.Outcome,
+                a.SanitizedError,
+                a.AttemptedAt
+            }).ToList()
+        })
+        .ToListAsync(cancellationToken);
+
+    return Results.Ok(new { total, page, pageSize, deliveries });
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.MapPost("/api/admin/digests/send", async (
     AppDbContext db,
     IEmailSender emailSender,

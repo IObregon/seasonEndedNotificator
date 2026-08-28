@@ -88,6 +88,10 @@
 
 ## Completion Checklist
 
-- [ ] Filters and attempt details are admin-only and sanitized.
-- [ ] Retry eligibility is explicit and tested.
-- [ ] Manual retry is audited and idempotent.
+- [x] Filters and attempt details are admin-only and sanitized.
+- [x] Retry eligibility is explicit and tested.
+- [x] Manual retry is audited and idempotent.
+
+## Result
+
+Completed on `2026-08-28`. `GET /api/admin/delivery-failures` returns paginated failed/permanently-failed deliveries with filter by channel, status, date range. Response includes sanitized attempts (outcome, sanitized error, timestamp) — no secrets or message bodies. Retry via existing `POST /api/admin/digests/{id}/retry` endpoint is idempotent under unique (UserId, Channel, DigestDate) constraint.
