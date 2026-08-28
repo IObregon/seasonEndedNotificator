@@ -38,19 +38,26 @@ public sealed class DailyMetadataRefreshJob(
             execution.Status = result.Failed == 0 ? "Completed" : "CompletedWithFailures";
             execution.Refreshed = result.Refreshed;
             execution.Failed = result.Failed;
-            execution.CompletedAt = now;
-            lease.ExpiresAt = now;
-            await context.SaveChangesAsync(cancellationToken);
+            await FinishAsync(execution, lease, now, cancellationToken);
             return DailyJobResult.Completed;
         }
         catch
         {
             execution.Status = "Failed";
-            execution.CompletedAt = now;
-            lease.ExpiresAt = now;
-            await context.SaveChangesAsync(CancellationToken.None);
+            await FinishAsync(execution, lease, now, CancellationToken.None);
             throw;
         }
+    }
+
+    private async Task FinishAsync(
+        JobExecution execution,
+        JobLease lease,
+        DateTimeOffset completedAt,
+        CancellationToken cancellationToken)
+    {
+        execution.CompletedAt = completedAt;
+        lease.ExpiresAt = completedAt;
+        await context.SaveChangesAsync(cancellationToken);
     }
 }
 

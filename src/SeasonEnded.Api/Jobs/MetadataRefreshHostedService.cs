@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using SeasonEnded.Api.Identity;
 
 namespace SeasonEnded.Api.Jobs;
 
@@ -23,7 +24,7 @@ public sealed class MetadataRefreshHostedService(
             return;
 
         await using var scope = scopeFactory.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<Identity.AppDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var lastCompleted = await db.JobExecutions
             .Where(execution =>
                 execution.JobName == DailyMetadataRefreshJob.JobName &&

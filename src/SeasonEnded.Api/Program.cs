@@ -128,6 +128,34 @@ if (app.Environment.IsDevelopment())
         return Results.NoContent();
     });
 
+    app.MapPost("/api/dev/email-digest-preview", async (
+        DigestPreviewRequest? request,
+        IEmailSender sender,
+        HttpContext httpContext,
+        CancellationToken cancellationToken) =>
+    {
+        if (!MailAddress.TryCreate(request?.Recipient, out var recipient))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                [nameof(DigestPreviewRequest.Recipient)] = ["Recipient must be a valid email address"]
+            });
+        }
+
+        var language = request?.Language;
+        if (language is not null && language is not ("en" or "es"))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                [nameof(DigestPreviewRequest.Language)] = ["Language must be 'en' or 'es'."]
+            });
+        }
+
+        var message = DigestPreviewMessages.Create(language, recipient.Address);
+        await sender.SendAsync(message, cancellationToken);
+        return Results.NoContent();
+    }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
     app.MapPost("/api/invitations", async (
         InviteUserRequest? request,
         AppDbContext db,
@@ -514,3 +542,4 @@ public sealed record MetadataIssueResponse(
     string Reason);
 public sealed record EmailPreferenceResponse(bool EmailEnabled);
 public sealed record EmailPreferenceRequest(bool EmailEnabled);
+public sealed record DigestPreviewRequest(string Recipient, string? Language = null);

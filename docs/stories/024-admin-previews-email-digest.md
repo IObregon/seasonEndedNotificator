@@ -77,6 +77,10 @@
 
 ## Completion Checklist
 
-- [ ] English and Spanish previews include HTML and plain text.
-- [ ] Preview is marked and creates no production delivery record.
-- [ ] Endpoint is absent outside Development.
+- [x] English and Spanish previews include HTML and plain text.
+- [x] Preview is marked and creates no production delivery record.
+- [x] Endpoint is absent outside Development.
+
+## Result
+
+Completed on `2026-08-28`. `DigestPreviewMessages.Create` builds fixed sample English/Spanish HTML and plain-text messages marked as preview. `POST /api/dev/email-digest-preview` requires admin authentication, validates recipient and optional language, sends via `IEmailSender`, and writes no delivery records. Development-only guard prevents registration outside Development environment.

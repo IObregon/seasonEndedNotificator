@@ -9,8 +9,9 @@ public sealed class TvmazeRetryHandler(IRetryDelay delay) : DelegatingHandler
         CancellationToken cancellationToken)
     {
         var response = await base.SendAsync(request, cancellationToken);
-        if (response.StatusCode != HttpStatusCode.TooManyRequests &&
-            (int)response.StatusCode < 500)
+        var shouldRetry = response.StatusCode == HttpStatusCode.TooManyRequests ||
+            (int)response.StatusCode >= 500;
+        if (!shouldRetry)
             return response;
 
         var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1);
