@@ -230,7 +230,9 @@ if (app.Environment.IsDevelopment())
         if (request is null || request.ProviderId <= 0)
             return Results.BadRequest("ProviderId is required.");
 
-        var show = await db.Shows.FirstOrDefaultAsync(s => s.ProviderId == request.ProviderId, cancellationToken);
+        var show = await db.Shows
+            .Include(s => s.Seasons)
+            .FirstOrDefaultAsync(s => s.ProviderId == request.ProviderId, cancellationToken);
         if (show is null)
             return Results.NotFound($"Show with ProviderId {request.ProviderId} not found. Search for it first via GET /api/shows/{request.ProviderId}.");
 
