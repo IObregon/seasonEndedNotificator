@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.SeasonTracking;
 
@@ -19,25 +20,23 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
         if (user is null || user.Status != "Active")
             return new SendDigestResult(Sent: false, Reason: "UserInactive");
 
-        var candidates = new List<DigestCandidate>();
-        foreach (var item in delivery.Items)
-        {
-            var completionEvent = await context.SeasonCompletionEvents
-                .FirstOrDefaultAsync(e => e.Id == item.SeasonCompletionEventId, cancellationToken);
-            if (completionEvent is null) continue;
-
-            var season = await context.Seasons
-                .FirstOrDefaultAsync(s => s.Id == completionEvent.SeasonId, cancellationToken);
-            if (season is null) continue;
-
-            var show = await context.Shows
-                .FirstOrDefaultAsync(s => s.Id == season.ShowId, cancellationToken);
-            if (show is null) continue;
-
-            candidates.Add(new DigestCandidate(
-                show.Id, show.Title, season.Number, season.EndDate,
-                completionEvent.Id, completionEvent.CompletedAt, show.ProviderId));
-        }
+        var candidates = await context.DigestItems
+            .Where(item => item.DigestDeliveryId == delivery.Id)
+            .Join(context.SeasonCompletionEvents,
+                item => item.SeasonCompletionEventId,
+                completion => completion.Id,
+                (item, completion) => new { item, completion })
+            .Join(context.Seasons,
+                x => x.completion.SeasonId,
+                season => season.Id,
+                (x, season) => new { x.item, x.completion, season })
+            .Join(context.Shows,
+                x => x.season.ShowId,
+                show => show.Id,
+                (x, show) => new DigestCandidate(
+                    show.Id, show.Title, x.season.Number, x.season.EndDate,
+                    x.completion.Id, x.completion.CompletedAt, show.ProviderId))
+            .ToListAsync();
 
         if (candidates.Count == 0)
         {
