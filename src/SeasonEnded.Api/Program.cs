@@ -29,6 +29,11 @@ builder.Services
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.LoginPath = "/api/auth/magic-link";
         options.Events.OnValidatePrincipal = SessionValidation.ValidateAsync;
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<ActiveUserPolicy>();
