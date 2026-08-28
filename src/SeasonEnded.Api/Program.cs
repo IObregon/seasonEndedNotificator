@@ -139,6 +139,16 @@ app.MapGet("/api/version", (IConfiguration configuration) =>
     return Results.Ok(new { version });
 });
 
+app.MapGet("/api/auth/me", (HttpContext httpContext) =>
+{
+    if (httpContext.GetUserId() is not { } userId)
+        return Results.Unauthorized();
+
+    var email = httpContext.User.FindFirstValue(ClaimTypes.Email);
+    var role = httpContext.User.FindFirstValue(ClaimTypes.Role);
+    return Results.Ok(new { email, role });
+}).RequireAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapPost("/api/dev/email-test", async (
@@ -244,13 +254,15 @@ app.MapPost("/api/invitations/accept", async (
 app.MapPost("/api/auth/magic-link", async (
     MagicLinkRequest? request,
     AppDbContext db,
-    IEmailSender sender) =>
+    IEmailSender sender,
+    HttpContext httpContext) =>
 {
     const string responseMessage = "If an account exists, a sign-in link has been sent.";
     if (!MailAddress.TryCreate(request?.Email, out var email))
         return Results.Ok(new { message = responseMessage });
 
-    await new RequestMagicLinkCommand(db, sender).ExecuteAsync(email.Address);
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    await new RequestMagicLinkCommand(db, sender, baseUrl).ExecuteAsync(email.Address);
     return Results.Ok(new { message = responseMessage });
 });
 

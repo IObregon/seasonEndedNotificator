@@ -16,7 +16,7 @@ public sealed class MagicLinkCommandTests
         await context.SaveChangesAsync();
         var sender = new TestEmailSender();
 
-        var command = new RequestMagicLinkCommand(context, sender);
+        var command = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
         await command.ExecuteAsync("active@example.test");
 
         Assert.NotNull(sender.SentMessage);
@@ -28,7 +28,7 @@ public sealed class MagicLinkCommandTests
     {
         await using var context = CreateInMemoryContext();
         var sender = new TestEmailSender();
-        var command = new RequestMagicLinkCommand(context, sender);
+        var command = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
 
         await command.ExecuteAsync("nobody@example.test");
 
@@ -43,7 +43,7 @@ public sealed class MagicLinkCommandTests
         context.Users.Add(new User { Email = "disabled@example.test", Status = "Disabled" });
         await context.SaveChangesAsync();
         var sender = new TestEmailSender();
-        var command = new RequestMagicLinkCommand(context, sender);
+        var command = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
 
         await command.ExecuteAsync("disabled@example.test");
 
@@ -58,7 +58,7 @@ public sealed class MagicLinkCommandTests
         context.Users.Add(new User { Email = "active@example.test", Status = "Active" });
         await context.SaveChangesAsync();
         var sender = new TestEmailSender();
-        var command = new RequestMagicLinkCommand(context, sender);
+        var command = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
 
         var result = await command.ExecuteAsync("active@example.test");
 
@@ -75,7 +75,7 @@ public sealed class MagicLinkCommandTests
         context.Users.Add(user);
         await context.SaveChangesAsync();
         var sender = new TestEmailSender();
-        var requestCmd = new RequestMagicLinkCommand(context, sender);
+        var requestCmd = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
         var result = await requestCmd.ExecuteAsync("active@example.test");
 
         var consumeCmd = new ConsumeMagicLinkCommand(context);
@@ -93,7 +93,7 @@ public sealed class MagicLinkCommandTests
         context.Users.Add(user);
         await context.SaveChangesAsync();
         var sender = new TestEmailSender();
-        var requestCmd = new RequestMagicLinkCommand(context, sender);
+        var requestCmd = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
         var result = await requestCmd.ExecuteAsync("active@example.test");
 
         var consumeCmd = new ConsumeMagicLinkCommand(context);
@@ -136,7 +136,7 @@ public sealed class MagicLinkCommandTests
         context.Users.Add(user);
         await context.SaveChangesAsync();
         var sender = new TestEmailSender();
-        var requestCmd = new RequestMagicLinkCommand(context, sender);
+        var requestCmd = new RequestMagicLinkCommand(context, sender, "https://season-ended.localhost");
         var result = await requestCmd.ExecuteAsync("active@example.test");
 
         user.Status = "Disabled";

@@ -4,10 +4,9 @@ import { describe, expect, it } from 'vitest'
 import App from './App.vue'
 
 describe('App', () => {
-  it('explains the purpose of the application', async () => {
+  it('shows loading state while checking auth', async () => {
     const html = await renderToString(createSSRApp(App))
 
-    expect(html).toContain('<h1>Season Ended</h1>')
-    expect(html).toContain('Know when a TV season is complete.')
+    expect(html).toContain('Loading')
   })
 })

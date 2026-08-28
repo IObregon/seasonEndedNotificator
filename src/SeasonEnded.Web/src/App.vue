@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import ShowSearch from './components/ShowSearch.vue'
 import ShowDetails from './components/ShowDetails.vue'
 import NotificationSettings from './components/NotificationSettings.vue'
+import LoginView from './components/LoginView.vue'
 
 type ShowDetailsData = {
   providerId: number
@@ -26,6 +27,19 @@ type FollowedShowData = {
 const selectedShow = ref<ShowDetailsData | null>(null)
 const detailsError = ref(false)
 const followedShows = ref<FollowedShowData[]>([])
+const authChecking = ref(true)
+const authenticated = ref(false)
+
+onMounted(async () => {
+  const response = await fetch('/api/auth/me')
+  authChecking.value = false
+  if (response.ok)
+    authenticated.value = true
+})
+
+function onAuthenticated() {
+  authenticated.value = true
+}
 
 async function loadDetails(providerId: number) {
   const response = await fetch(`/api/shows/${providerId}`)
@@ -59,25 +73,33 @@ async function unfollow(providerId: number) {
 
 <template>
   <main class="shell">
-    <p class="eyebrow">SEASON FINALE NOTIFICATIONS</p>
-    <h1>Season Ended</h1>
-    <p class="summary">Know when a TV season is complete.</p>
-    <ShowSearch @select="loadDetails" />
-    <p v-if="detailsError">Show details are unavailable. Try again.</p>
-    <ShowDetails v-if="selectedShow" :show="selectedShow" />
-    <section class="followed-shows">
-      <div class="section-heading">
-        <h2>Followed shows</h2>
-        <button type="button" @click="loadFollows">Refresh</button>
-      </div>
-      <p v-if="!followedShows.length">No followed shows yet.</p>
-      <ul v-else>
-        <li v-for="show in followedShows" :key="show.providerId">
-          <span>{{ show.title }} · {{ show.status }}</span>
-          <button type="button" @click="unfollow(show.providerId)">Unfollow</button>
-        </li>
-      </ul>
-    </section>
-    <NotificationSettings />
+    <template v-if="authChecking">
+      <p>Loading…</p>
+    </template>
+    <template v-else-if="!authenticated">
+      <LoginView @authenticated="onAuthenticated" />
+    </template>
+    <template v-else>
+      <p class="eyebrow">SEASON FINALE NOTIFICATIONS</p>
+      <h1>Season Ended</h1>
+      <p class="summary">Know when a TV season is complete.</p>
+      <ShowSearch @select="loadDetails" />
+      <p v-if="detailsError">Show details are unavailable. Try again.</p>
+      <ShowDetails v-if="selectedShow" :show="selectedShow" />
+      <section class="followed-shows">
+        <div class="section-heading">
+          <h2>Followed shows</h2>
+          <button type="button" @click="loadFollows">Refresh</button>
+        </div>
+        <p v-if="!followedShows.length">No followed shows yet.</p>
+        <ul v-else>
+          <li v-for="show in followedShows" :key="show.providerId">
+            <span>{{ show.title }} · {{ show.status }}</span>
+            <button type="button" @click="unfollow(show.providerId)">Unfollow</button>
+          </li>
+        </ul>
+      </section>
+      <NotificationSettings />
+    </template>
   </main>
 </template>

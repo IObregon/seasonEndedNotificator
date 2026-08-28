@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SeasonEnded.Api.Identity;
 
-public sealed class RequestMagicLinkCommand(AppDbContext context, IEmailSender emailSender)
+public sealed class RequestMagicLinkCommand(AppDbContext context, IEmailSender emailSender, string baseUrl)
 {
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(15);
 
@@ -31,7 +31,7 @@ public sealed class RequestMagicLinkCommand(AppDbContext context, IEmailSender e
         });
         await context.SaveChangesAsync();
 
-        var message = AuthenticationMessages.MagicLink(user.PreferredLanguage, rawToken) with
+        var message = AuthenticationMessages.MagicLink(user.PreferredLanguage, rawToken, baseUrl) with
         {
             To = normalized
         };
