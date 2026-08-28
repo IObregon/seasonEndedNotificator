@@ -88,6 +88,10 @@
 
 ## Completion Checklist
 
-- [ ] Registration and revocation are authenticated and idempotent.
+- [x] Registration and revocation are authenticated and idempotent.
 - [ ] Permission prompt follows explicit user action.
 - [ ] Feature flag rollback has been exercised.
+
+## Result
+
+Backend completed on `2026-08-28`. `PushSubscription` entity with unique endpoint index, user-scoped. `POST /api/push/subscriptions` upserts by endpoint, `DELETE /api/push/subscriptions/{id}` revokes by marking inactive. `GET /api/push/subscriptions` lists active devices with label and last success. Permission flow is a frontend concern.

@@ -612,6 +612,96 @@ app.MapDelete("/api/telegram/connection", async (
     return result ? Results.NoContent() : Results.Unauthorized();
 }).RequireAuthorization();
 
+app.MapGet("/api/manifest.json", (IConfiguration configuration) =>
+{
+    var appName = configuration["PWA:Name"] ?? "Season Ended";
+    var startUrl = configuration["PWA:StartUrl"] ?? "/";
+    return Results.Ok(new
+    {
+        name = appName,
+        short_name = appName,
+        start_url = startUrl,
+        display = "standalone",
+        background_color = "#ffffff",
+        theme_color = "#1a73e8",
+        icons = new[]
+        {
+            new { src = "/icons/icon-192.png", sizes = "192x192", type = "image/png" },
+            new { src = "/icons/icon-512.png", sizes = "512x512", type = "image/png" }
+        }
+    });
+});
+
+app.MapPost("/api/push/subscriptions", async (
+    PushSubscriptionRequest? request,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (request is null || string.IsNullOrEmpty(request.Endpoint))
+        return Results.BadRequest();
+
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var existing = await db.PushSubscriptions
+        .FirstOrDefaultAsync(s => s.Endpoint == request.Endpoint);
+
+    if (existing is not null)
+    {
+        if (existing.UserId != userId)
+            return Results.Forbid();
+
+        existing.P256DH = request.P256DH;
+        existing.Auth = request.Auth;
+        existing.Active = true;
+        await db.SaveChangesAsync();
+        return Results.Ok(new { id = existing.Id });
+    }
+
+    var subscription = new PushSubscription
+    {
+        UserId = userId,
+        Endpoint = request.Endpoint,
+        P256DH = request.P256DH,
+        Auth = request.Auth,
+        Label = request.Label
+    };
+    db.PushSubscriptions.Add(subscription);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { id = subscription.Id });
+}).RequireAuthorization();
+
+app.MapGet("/api/push/subscriptions", async (
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var devices = await db.PushSubscriptions
+        .Where(s => s.UserId == userId && s.Active)
+        .Select(s => new { s.Id, s.Label, s.RegisteredAt, s.LastSuccessAt })
+        .ToListAsync();
+    return Results.Ok(devices);
+}).RequireAuthorization();
+
+app.MapDelete("/api/push/subscriptions/{id:guid}", async (
+    Guid id,
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var sub = await db.PushSubscriptions.FindAsync(id);
+    if (sub is null || sub.UserId != userId)
+        return Results.NotFound();
+
+    sub.Active = false;
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;
@@ -654,3 +744,4 @@ public sealed record DigestPreviewRequest(string Recipient, string? Language = n
 public sealed record TelegramWebhookRequest(string? Secret, TelegramMessage? Message);
 public sealed record TelegramMessage(long? Id, TelegramChat? Chat, string? Text);
 public sealed record TelegramChat(long? Id);
+public sealed record PushSubscriptionRequest(string Endpoint, string P256DH, string Auth, string? Label = null);

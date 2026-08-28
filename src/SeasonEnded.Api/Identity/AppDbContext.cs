@@ -23,6 +23,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<DeliveryAttempt> DeliveryAttempts => Set<DeliveryAttempt>();
     public DbSet<TelegramConnectionToken> TelegramConnectionTokens => Set<TelegramConnectionToken>();
     public DbSet<TelegramDestination> TelegramDestinations => Set<TelegramDestination>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -143,6 +144,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(dest => dest.Id);
             entity.HasIndex(dest => dest.UserId).IsUnique();
+        });
+
+        modelBuilder.Entity<PushSubscription>(entity =>
+        {
+            entity.HasKey(sub => sub.Id);
+            entity.HasIndex(sub => sub.Endpoint).IsUnique();
+            entity.HasIndex(sub => sub.UserId);
+            entity.Property(sub => sub.Endpoint).IsRequired();
+            entity.Property(sub => sub.P256DH).IsRequired();
+            entity.Property(sub => sub.Auth).IsRequired();
         });
 
     }
