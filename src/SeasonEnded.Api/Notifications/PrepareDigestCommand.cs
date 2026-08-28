@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Identity;
-using System.Data;
 
 namespace SeasonEnded.Api.Notifications;
 
@@ -32,22 +31,6 @@ public sealed class PrepareDigestCommand(AppDbContext context)
             if (candidates.Count == 0)
                 continue;
 
-            await using var transaction = await context.Database.BeginTransactionAsync(
-                IsolationLevel.Serializable, cancellationToken);
-
-            existing = await context.DigestDeliveries
-                .FirstOrDefaultAsync(d =>
-                    d.UserId == user.Id &&
-                    d.Channel == "Email" &&
-                    d.DigestDate == digestDate, cancellationToken);
-
-            if (existing is not null)
-            {
-                results.Add(existing);
-                await transaction.CommitAsync(cancellationToken);
-                continue;
-            }
-
             var delivery = new DigestDelivery
             {
                 UserId = user.Id,
@@ -66,7 +49,6 @@ public sealed class PrepareDigestCommand(AppDbContext context)
 
             context.DigestDeliveries.Add(delivery);
             await context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
 
             results.Add(delivery);
         }

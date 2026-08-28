@@ -8,7 +8,9 @@ public sealed class DigestDelivery
     public DateOnly DigestDate { get; init; } = DateOnly.FromDateTime(DateTime.UtcNow);
     public string Status { get; set; } = "Pending";
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? NextAttemptAt { get; set; }
     public List<DigestItem> Items { get; } = [];
+    public List<DeliveryAttempt> Attempts { get; } = [];
 }
 
 public sealed class DigestItem

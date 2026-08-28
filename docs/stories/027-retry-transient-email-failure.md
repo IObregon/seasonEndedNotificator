@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Error classification and retry bounds are executable and documented.
-- [ ] Attempts and sanitized errors are persisted atomically.
-- [ ] Successful or permanent outcomes cannot be retried.
+- [x] Error classification and retry bounds are executable and documented.
+- [x] Attempts and sanitized errors are persisted atomically.
+- [x] Successful or permanent outcomes cannot be retried.
+
+## Result
+
+Completed on `2026-08-28`. `RetryPolicy` computes bounded exponential delays (0, 5, 30, 120, 720 minutes) up to 5 attempts. Permanent failures and successes schedule no next attempt. `SendDigestCommand` catches `HttpRequestException` (transient), `TimeoutException` (transient), and `InvalidOperationException` (permanent), records `DeliveryAttempt` with sanitized error, and sets `NextAttemptAt` accordingly. `RetryEligibilityQuery` finds failed deliveries with due next-attempt times. `POST /api/admin/digests/{id}/retry` re-invokes send for a specific delivery.

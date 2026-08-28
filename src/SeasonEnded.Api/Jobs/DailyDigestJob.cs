@@ -4,10 +4,7 @@ using SeasonEnded.Api.Notifications;
 
 namespace SeasonEnded.Api.Jobs;
 
-public sealed class DailyDigestJob(
-    AppDbContext context,
-    PrepareDigestCommand prepareDigest,
-    SendDigestCommand sendDigest)
+public sealed class DailyDigestJob(IServiceScopeFactory scopeFactory)
 {
     public const string JobName = "daily-digest";
     private static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(30);
@@ -17,6 +14,9 @@ public sealed class DailyDigestJob(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
         var lease = await context.JobLeases.FindAsync([JobName], cancellationToken);
         if (lease is not null && lease.ExpiresAt > now && lease.Owner != owner)
             return DailyDigestResult.LeaseUnavailable;
@@ -33,43 +33,62 @@ public sealed class DailyDigestJob(
         context.JobExecutions.Add(execution);
         await context.SaveChangesAsync(cancellationToken);
 
+        var executionId = execution.Id;
+
+        int sentCount, failedCount;
         try
         {
             var digestDate = DateOnly.FromDateTime(now.Date);
-            var deliveries = await prepareDigest.ExecuteAsync(digestDate, cancellationToken);
-            var sentCount = 0;
-            var failedCount = 0;
+            var prepare = scope.ServiceProvider.GetRequiredService<PrepareDigestCommand>();
+            var deliveries = await prepare.ExecuteAsync(digestDate, cancellationToken);
+            sentCount = 0;
+            failedCount = 0;
 
             foreach (var delivery in deliveries)
             {
-                var result = await sendDigest.ExecuteAsync(delivery.Id, cancellationToken);
+                var send = scope.ServiceProvider.GetRequiredService<SendDigestCommand>();
+                var result = await send.ExecuteAsync(delivery.Id, cancellationToken);
                 if (result.Sent) sentCount++;
                 else failedCount++;
             }
-
-            execution.Status = failedCount == 0 ? "Completed" : "CompletedWithFailures";
-            execution.Refreshed = sentCount;
-            execution.Failed = failedCount;
-            await FinishAsync(execution, lease, now, cancellationToken);
-            return DailyDigestResult.Completed;
         }
         catch
         {
-            execution.Status = "Failed";
-            await FinishAsync(execution, lease, now, CancellationToken.None);
+            await RecordFinishAsync(scopeFactory, executionId, now, "Failed", 0, 0);
             throw;
         }
+
+        await RecordFinishAsync(scopeFactory, executionId, now,
+            failedCount == 0 ? "Completed" : "CompletedWithFailures",
+            sentCount, failedCount);
+
+        return DailyDigestResult.Completed;
     }
 
-    private async Task FinishAsync(
-        JobExecution execution,
-        JobLease lease,
+    private static async Task RecordFinishAsync(
+        IServiceScopeFactory scopeFactory,
+        Guid executionId,
         DateTimeOffset completedAt,
-        CancellationToken cancellationToken)
+        string status,
+        int refreshed,
+        int failed)
     {
-        execution.CompletedAt = completedAt;
-        lease.ExpiresAt = completedAt;
-        await context.SaveChangesAsync(cancellationToken);
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var lease = await context.JobLeases.FindAsync([JobName]);
+        if (lease is not null) lease.ExpiresAt = completedAt;
+
+        var execution = await context.JobExecutions.FindAsync([executionId]);
+        if (execution is not null)
+        {
+            execution.Status = status;
+            execution.CompletedAt = completedAt;
+            execution.Refreshed = refreshed;
+            execution.Failed = failed;
+        }
+
+        await context.SaveChangesAsync();
     }
 }
 

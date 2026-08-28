@@ -20,6 +20,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<JobExecution> JobExecutions => Set<JobExecution>();
     public DbSet<DigestDelivery> DigestDeliveries => Set<DigestDelivery>();
     public DbSet<DigestItem> DigestItems => Set<DigestItem>();
+    public DbSet<DeliveryAttempt> DeliveryAttempts => Set<DeliveryAttempt>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -119,6 +120,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(item => item.Id);
             entity.HasIndex(item => new { item.DigestDeliveryId, item.SeasonCompletionEventId }).IsUnique();
+        });
+
+        modelBuilder.Entity<DeliveryAttempt>(entity =>
+        {
+            entity.HasKey(attempt => attempt.Id);
+            entity.HasIndex(attempt => attempt.DigestDeliveryId);
+            entity.Property(attempt => attempt.Outcome).IsRequired();
         });
 
     }

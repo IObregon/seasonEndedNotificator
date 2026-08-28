@@ -507,6 +507,17 @@ app.MapPost("/api/admin/digests/send", async (
     return Results.Ok(results);
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapPost("/api/admin/digests/{deliveryId:guid}/retry", async (
+    Guid deliveryId,
+    AppDbContext db,
+    IEmailSender emailSender,
+    CancellationToken cancellationToken) =>
+{
+    var result = await new SendDigestCommand(db, emailSender)
+        .ExecuteAsync(deliveryId, cancellationToken);
+    return Results.Ok(new { sent = result.Sent, reason = result.Reason });
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.MapGet("/api/notification-preferences", async (
     AppDbContext db,
     HttpContext httpContext) =>

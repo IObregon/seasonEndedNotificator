@@ -9,19 +9,20 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
 {
     public async Task<SendDigestResult> ExecuteAsync(Guid deliveryId, CancellationToken cancellationToken = default)
     {
-        var delivery = await context.DigestDeliveries
-            .Include(d => d.Items)
-            .FirstOrDefaultAsync(d => d.Id == deliveryId, cancellationToken);
+        var deliveryDto = await context.DigestDeliveries
+            .Where(d => d.Id == deliveryId)
+            .Select(d => new { d.Id, d.UserId, d.Status, d.Channel, d.DigestDate, ItemCount = d.Items.Count, AttemptCount = d.Attempts.Count })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (delivery is null || delivery.Status != "Pending")
-            return new SendDigestResult(Sent: false, Reason: delivery is null ? "NotFound" : "NotPending");
+        if (deliveryDto is null || deliveryDto.Status is not ("Pending" or "Failed"))
+            return new SendDigestResult(Sent: false, Reason: deliveryDto is null ? "NotFound" : "NotPending");
 
-        var user = await context.Users.FindAsync([delivery.UserId], cancellationToken);
+        var user = await context.Users.FindAsync([deliveryDto.UserId], cancellationToken);
         if (user is null || user.Status != "Active")
             return new SendDigestResult(Sent: false, Reason: "UserInactive");
 
         var candidates = await context.DigestItems
-            .Where(item => item.DigestDeliveryId == delivery.Id)
+            .Where(item => item.DigestDeliveryId == deliveryId)
             .Join(context.SeasonCompletionEvents,
                 item => item.SeasonCompletionEventId,
                 completion => completion.Id,
@@ -40,18 +41,82 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
 
         if (candidates.Count == 0)
         {
-            delivery.Status = "Skipped";
-            await context.SaveChangesAsync(cancellationToken);
+            await UpdateDeliveryStatusAsync(context, deliveryId, "Skipped", null, cancellationToken);
             return new SendDigestResult(Sent: false, Reason: "NoItems");
         }
 
-        var message = DigestMessages.Create(user.PreferredLanguage, user.Email, candidates);
-        await emailSender.SendAsync(message, cancellationToken);
+        var attemptNumber = deliveryDto.AttemptCount + 1;
+        DeliveryOutcome outcome;
+        string? sanitizedError = null;
 
-        delivery.Status = "Sent";
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            var message = DigestMessages.Create(user.PreferredLanguage, user.Email, candidates);
+            await emailSender.SendAsync(message, cancellationToken);
+            outcome = DeliveryOutcome.Succeeded;
+        }
+        catch (HttpRequestException ex)
+        {
+            outcome = DeliveryOutcome.TransientFailure;
+            sanitizedError = Sanitize(ex.Message);
+        }
+        catch (TimeoutException ex)
+        {
+            outcome = DeliveryOutcome.TransientFailure;
+            sanitizedError = Sanitize(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            outcome = DeliveryOutcome.PermanentFailure;
+            sanitizedError = Sanitize(ex.Message);
+        }
 
-        return new SendDigestResult(Sent: true, Reason: null);
+        context.DeliveryAttempts.Add(new DeliveryAttempt
+        {
+            DigestDeliveryId = deliveryId,
+            AttemptNumber = attemptNumber,
+            Outcome = outcome.ToString(),
+            SanitizedError = sanitizedError
+        });
+
+        var newStatus = outcome switch
+        {
+            DeliveryOutcome.Succeeded => "Sent",
+            DeliveryOutcome.PermanentFailure => "PermanentlyFailed",
+            _ => "Failed"
+        };
+        var nextAttempt = RetryPolicy.NextAttemptAt(attemptNumber, outcome);
+
+        await UpdateDeliveryStatusAsync(context, deliveryId, newStatus, nextAttempt, cancellationToken);
+
+        return new SendDigestResult(
+            Sent: outcome == DeliveryOutcome.Succeeded,
+            Reason: outcome == DeliveryOutcome.Succeeded ? null : outcome.ToString());
+    }
+
+    private static string Sanitize(string message) =>
+        message.Length > 200 ? message[..200] : message;
+
+    private static async Task UpdateDeliveryStatusAsync(
+        AppDbContext context,
+        Guid deliveryId,
+        string status,
+        DateTimeOffset? nextAttemptAt,
+        CancellationToken cancellationToken)
+    {
+        var tracked = context.DigestDeliveries.Local.FirstOrDefault(d => d.Id == deliveryId);
+        if (tracked is not null)
+        {
+            context.Entry(tracked).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+        }
+
+        var delivery = await context.DigestDeliveries.FindAsync([deliveryId], cancellationToken);
+        if (delivery is not null)
+        {
+            delivery.Status = status;
+            delivery.NextAttemptAt = nextAttemptAt;
+            await context.SaveChangesAsync(cancellationToken);
+        }
     }
 }
 
