@@ -16,7 +16,7 @@ const props = defineProps<{
   }
 }>()
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [], followed: [] }>()
 const followed = ref(false)
 
 watch(() => props.show.providerId, () => {
@@ -26,6 +26,7 @@ watch(() => props.show.providerId, () => {
 async function follow() {
   const response = await fetch(`/api/shows/${props.show.providerId}/follow`, { method: 'POST' })
   followed.value = response.ok
+  if (response.ok) emit('followed')
 }
 </script>
 

@@ -112,7 +112,7 @@ async function nextTick() {
             <p v-if="!selectedShow && !detailsError" class="details-placeholder">
               Search for a show and select it to see details.
             </p>
-            <ShowDetails v-if="selectedShow" :show="selectedShow" @close="closeDetails" />
+            <ShowDetails v-if="selectedShow" :show="selectedShow" @close="closeDetails" @followed="loadFollows" />
           </div>
 
           <section class="followed-shows">
