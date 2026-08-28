@@ -547,6 +547,44 @@ app.MapGet("/api/admin/delivery-failures", async (
     return Results.Ok(new { total, page, pageSize, deliveries });
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapGet("/api/admin/system-health", async (
+    AppDbContext db,
+    CancellationToken cancellationToken) =>
+{
+    var lastRefresh = await db.JobExecutions
+        .Where(e => e.JobName == "daily-metadata-refresh" && e.Status.StartsWith("Completed"))
+        .OrderByDescending(e => e.CompletedAt)
+        .Select(e => e.CompletedAt)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    var lastDigest = await db.JobExecutions
+        .Where(e => e.JobName == "daily-digest" && e.Status.StartsWith("Completed"))
+        .OrderByDescending(e => e.CompletedAt)
+        .Select(e => e.CompletedAt)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    var pendingRetries = await db.DigestDeliveries
+        .CountAsync(d => d.Status == "Failed" && d.NextAttemptAt != null, cancellationToken);
+
+    var oldestRetry = await db.DigestDeliveries
+        .Where(d => d.Status == "Failed" && d.NextAttemptAt != null)
+        .OrderBy(d => d.NextAttemptAt)
+        .Select(d => d.NextAttemptAt)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    var failedDeliveries = await db.DigestDeliveries
+        .CountAsync(d => d.Status == "PermanentlyFailed", cancellationToken);
+
+    return Results.Ok(new
+    {
+        lastMetadataRefresh = lastRefresh,
+        lastDigestRun = lastDigest,
+        pendingRetries,
+        oldestRetryNextAttempt = oldestRetry,
+        permanentlyFailedDeliveries = failedDeliveries
+    });
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.MapPost("/api/admin/shows/{providerId:int}/refresh", async (
     int providerId,
     AppDbContext db,

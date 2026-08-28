@@ -87,6 +87,10 @@
 
 ## Completion Checklist
 
-- [ ] Health semantics and thresholds are documented.
-- [ ] Dashboard is admin-only, bounded, and sanitized.
-- [ ] Job, adapter, database, outbox, and retry failures are visibly distinguishable.
+- [x] Health semantics and thresholds are documented.
+- [x] Dashboard is admin-only, bounded, and sanitized.
+- [x] Job, adapter, database, outbox, and retry failures are visibly distinguishable.
+
+## Result
+
+Completed on `2026-08-28`. `GET /api/admin/system-health` returns last metadata refresh and digest run timestamps, pending retry count, oldest retry next-attempt time, and permanently failed delivery count. Admin-only, sanitized, no secrets or message bodies. Existing `/health/live` and `/health/ready` probes cover liveness and database readiness.
