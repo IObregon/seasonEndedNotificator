@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Eligibility and localization cover all required fields and boundaries.
-- [ ] Unique keys prevent duplicate digest and items.
-- [ ] Authorized manual run sends one verified staging digest.
+- [x] Eligibility and localization cover all required fields and boundaries.
+- [x] Unique keys prevent duplicate digest and items.
+- [x] Authorized manual run sends one verified staging digest.
+
+## Result
+
+Completed on `2026-08-28`. `DigestEligibilityQuery` selects confirmed followed-season completions after the user's follow timestamp, excluding already-delivered events and disabled-email users. `DigestMessages.Create` builds localized HTML and plain-text messages with show title, season number, end date, and internal link. `PrepareDigestCommand` creates at most one `DigestDelivery` per user/channel/date with `DigestItem` records, enforced by unique composite indexes. `SendDigestCommand` sends through `IEmailSender` and marks delivery sent. `POST /api/admin/digests/send` requires admin and prepares then sends all pending digests for the current date.

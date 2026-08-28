@@ -479,6 +479,25 @@ app.MapGet("/api/admin/metadata/issues", async (AppDbContext db) =>
     return Results.Ok(issues);
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 
+app.MapPost("/api/admin/digests/send", async (
+    AppDbContext db,
+    IEmailSender emailSender,
+    CancellationToken cancellationToken) =>
+{
+    var digestDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
+    var prepared = await new PrepareDigestCommand(db).ExecuteAsync(digestDate, cancellationToken);
+    var results = new List<object>();
+
+    foreach (var delivery in prepared)
+    {
+        var result = await new SendDigestCommand(db, emailSender)
+            .ExecuteAsync(delivery.Id, cancellationToken);
+        results.Add(new { deliveryId = delivery.Id, sent = result.Sent, reason = result.Reason });
+    }
+
+    return Results.Ok(results);
+}).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
 app.MapGet("/api/notification-preferences", async (
     AppDbContext db,
     HttpContext httpContext) =>

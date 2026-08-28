@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.SeasonTracking;
 using SeasonEnded.Api.Jobs;
+using SeasonEnded.Api.Notifications;
 
 namespace SeasonEnded.Api.Identity;
 
@@ -17,6 +18,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<SeasonCompletionEvent> SeasonCompletionEvents => Set<SeasonCompletionEvent>();
     public DbSet<JobLease> JobLeases => Set<JobLease>();
     public DbSet<JobExecution> JobExecutions => Set<JobExecution>();
+    public DbSet<DigestDelivery> DigestDeliveries => Set<DigestDelivery>();
+    public DbSet<DigestItem> DigestItems => Set<DigestItem>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -99,6 +102,24 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         modelBuilder.Entity<JobLease>().HasKey(lease => lease.Name);
         modelBuilder.Entity<JobExecution>().HasKey(execution => execution.Id);
+
+        modelBuilder.Entity<DigestDelivery>(entity =>
+        {
+            entity.HasKey(delivery => delivery.Id);
+            entity.HasIndex(delivery => new { delivery.UserId, delivery.Channel, delivery.DigestDate }).IsUnique();
+            entity.Property(delivery => delivery.Channel).IsRequired();
+            entity.Property(delivery => delivery.Status).IsRequired();
+            entity.HasMany(delivery => delivery.Items)
+                .WithOne(item => item.DigestDelivery)
+                .HasForeignKey(item => item.DigestDeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DigestItem>(entity =>
+        {
+            entity.HasKey(item => item.Id);
+            entity.HasIndex(item => new { item.DigestDeliveryId, item.SeasonCompletionEventId }).IsUnique();
+        });
 
     }
 
