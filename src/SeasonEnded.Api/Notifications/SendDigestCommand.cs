@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Identity;
-using SeasonEnded.Api.SeasonTracking;
 
 namespace SeasonEnded.Api.Notifications;
 

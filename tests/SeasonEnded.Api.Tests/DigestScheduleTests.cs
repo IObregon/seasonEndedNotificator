@@ -10,7 +10,7 @@ public sealed class DigestScheduleTests
         var options = new DigestScheduleOptions { Enabled = true, HourUtc = 9 };
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
 
-        Assert.True(DigestSchedule.IsDue(options, now, null));
+        Assert.True(DailySchedule.IsDue(options, now, null));
     }
 
     [Fact]
@@ -19,7 +19,7 @@ public sealed class DigestScheduleTests
         var options = new DigestScheduleOptions { Enabled = true, HourUtc = 9 };
         var now = new DateTimeOffset(2026, 8, 28, 8, 59, 0, TimeSpan.Zero);
 
-        Assert.False(DigestSchedule.IsDue(options, now, null));
+        Assert.False(DailySchedule.IsDue(options, now, null));
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class DigestScheduleTests
         var options = new DigestScheduleOptions { Enabled = false, HourUtc = 9 };
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
 
-        Assert.False(DigestSchedule.IsDue(options, now, null));
+        Assert.False(DailySchedule.IsDue(options, now, null));
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class DigestScheduleTests
         var now = new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero);
         var lastCompleted = new DateTimeOffset(2026, 8, 28, 9, 5, 0, TimeSpan.Zero);
 
-        Assert.False(DigestSchedule.IsDue(options, now, lastCompleted));
+        Assert.False(DailySchedule.IsDue(options, now, lastCompleted));
     }
 
     [Fact]
@@ -48,6 +48,6 @@ public sealed class DigestScheduleTests
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
         var lastCompleted = new DateTimeOffset(2026, 8, 27, 9, 5, 0, TimeSpan.Zero);
 
-        Assert.True(DigestSchedule.IsDue(options, now, lastCompleted));
+        Assert.True(DailySchedule.IsDue(options, now, lastCompleted));
     }
 }

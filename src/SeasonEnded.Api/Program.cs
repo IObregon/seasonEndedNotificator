@@ -263,7 +263,7 @@ app.MapPut("/api/me/language", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     try
@@ -286,7 +286,7 @@ app.MapPost("/api/admin/users/{targetId:guid}/disable", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var callerId))
+    if (httpContext.GetUserId() is not { } callerId)
         return Results.Unauthorized();
 
     var result = await new DisableUserCommand(db).ExecuteAsync(callerId, targetId);
@@ -306,7 +306,7 @@ app.MapPut("/api/admin/users/{targetId:guid}/role", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var actorId))
+    if (httpContext.GetUserId() is not { } actorId)
         return Results.Unauthorized();
     if (!Enum.TryParse<UserRole>(request?.Role, ignoreCase: true, out var role))
         return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -340,7 +340,7 @@ app.MapDelete("/api/me", async (
         {
             [nameof(DeleteAccountRequest.Confirmation)] = ["Confirmation must be 'DELETE MY ACCOUNT'."]
         });
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
     if (!long.TryParse(httpContext.User.FindFirstValue("authenticated_at"), out var authenticatedAt) ||
         DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(authenticatedAt) > TimeSpan.FromMinutes(10))
@@ -430,7 +430,7 @@ app.MapPost("/api/shows/{providerId:int}/follow", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var show = await db.Shows.FirstOrDefaultAsync(item => item.ProviderId == providerId);
@@ -446,7 +446,7 @@ app.MapDelete("/api/shows/{providerId:int}/follow", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var show = await db.Shows.FirstOrDefaultAsync(item => item.ProviderId == providerId);
@@ -460,7 +460,7 @@ app.MapGet("/api/follows", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var followedShows = await db.ShowFollows
@@ -647,7 +647,7 @@ app.MapGet("/api/notification-preferences", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var enabled = await new EmailPreferenceService(db).IsEnabledAsync(userId);
@@ -659,7 +659,7 @@ app.MapPut("/api/notification-preferences", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
     if (request is null)
         return Results.BadRequest();
@@ -673,7 +673,7 @@ app.MapPost("/api/telegram/link", async (
     HttpContext httpContext,
     IConfiguration configuration) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var botUsername = configuration["Telegram:BotUsername"] ?? "";
@@ -712,7 +712,7 @@ app.MapGet("/api/telegram/status", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var connected = await db.TelegramDestinations.AnyAsync(d => d.UserId == userId);
@@ -723,7 +723,7 @@ app.MapDelete("/api/telegram/connection", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var result = await new DisconnectTelegramCommand(db).ExecuteAsync(userId);
@@ -758,7 +758,7 @@ app.MapPost("/api/push/subscriptions", async (
     if (request is null || string.IsNullOrEmpty(request.Endpoint))
         return Results.BadRequest();
 
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var existing = await db.PushSubscriptions
@@ -793,7 +793,7 @@ app.MapGet("/api/push/subscriptions", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var devices = await db.PushSubscriptions
@@ -808,7 +808,7 @@ app.MapDelete("/api/push/subscriptions/{id:guid}", async (
     AppDbContext db,
     HttpContext httpContext) =>
 {
-    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+    if (httpContext.GetUserId() is not { } userId)
         return Results.Unauthorized();
 
     var sub = await db.PushSubscriptions.FindAsync(id);
@@ -863,3 +863,12 @@ public sealed record TelegramWebhookRequest(string? Secret, TelegramMessage? Mes
 public sealed record TelegramMessage(long? Id, TelegramChat? Chat, string? Text);
 public sealed record TelegramChat(long? Id);
 public sealed record PushSubscriptionRequest(string Endpoint, string P256DH, string Auth, string? Label = null);
+
+internal static class HttpContextExtensions
+{
+    public static Guid? GetUserId(this HttpContext httpContext)
+    {
+        var id = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(id, out var userId) ? userId : null;
+    }
+}

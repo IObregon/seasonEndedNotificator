@@ -13,30 +13,30 @@ public sealed class ConsumeTelegramTokenCommand(AppDbContext context)
         var token = await context.TelegramConnectionTokens
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash && t.Status == "Pending");
 
-        if (token is null || token.IsExpired(now))
+        if (token is null)
+            return new ConsumeTelegramTokenResult(Succeeded: false);
+
+        if (token.IsExpired(now))
         {
-            if (token is not null) token.Status = "Expired";
+            token.Status = "Expired";
             await context.SaveChangesAsync();
             return new ConsumeTelegramTokenResult(Succeeded: false);
         }
 
-        var existingDest = await context.TelegramDestinations
-            .FirstOrDefaultAsync(d => d.UserId == token.UserId);
-
-        if (existingDest is not null)
-        {
-            token.Status = "Consumed";
-            await context.SaveChangesAsync();
-            return new ConsumeTelegramTokenResult(Succeeded: true);
-        }
-
         token.Status = "Consumed";
-        context.TelegramDestinations.Add(new TelegramDestination
+
+        var alreadyConnected = await context.TelegramDestinations
+            .AnyAsync(d => d.UserId == token.UserId);
+
+        if (!alreadyConnected)
         {
-            UserId = token.UserId,
-            ChatId = chatId,
-            ConnectedAt = now
-        });
+            context.TelegramDestinations.Add(new TelegramDestination
+            {
+                UserId = token.UserId,
+                ChatId = chatId,
+                ConnectedAt = now
+            });
+        }
 
         await context.SaveChangesAsync();
         return new ConsumeTelegramTokenResult(Succeeded: true);

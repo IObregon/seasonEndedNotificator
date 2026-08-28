@@ -9,7 +9,7 @@ public sealed class DailyRefreshScheduleTests
     {
         var options = new MetadataRefreshOptions { Enabled = false, HourUtc = 7 };
 
-        Assert.False(DailyRefreshSchedule.IsDue(
+        Assert.False(DailySchedule.IsDue(
             options,
             new DateTimeOffset(2026, 8, 27, 7, 0, 0, TimeSpan.Zero),
             lastCompletedAt: null));
@@ -21,8 +21,8 @@ public sealed class DailyRefreshScheduleTests
         var options = new MetadataRefreshOptions { Enabled = true, HourUtc = 7 };
         var now = new DateTimeOffset(2026, 8, 27, 8, 0, 0, TimeSpan.Zero);
 
-        Assert.True(DailyRefreshSchedule.IsDue(options, now, lastCompletedAt: null));
-        Assert.False(DailyRefreshSchedule.IsDue(options, now, now.AddMinutes(-30)));
-        Assert.True(DailyRefreshSchedule.IsDue(options, now, now.AddDays(-1)));
+        Assert.True(DailySchedule.IsDue(options, now, lastCompletedAt: null));
+        Assert.False(DailySchedule.IsDue(options, now, now.AddMinutes(-30)));
+        Assert.True(DailySchedule.IsDue(options, now, now.AddDays(-1)));
     }
 }
