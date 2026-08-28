@@ -61,6 +61,8 @@ builder.Services
     .Validate(options => options.HourUtc is >= 0 and <= 23, "DigestSchedule:HourUtc must be 0-23")
     .ValidateOnStart();
 builder.Services.AddHostedService<DigestHostedService>();
+builder.Services.AddScoped<CreateTelegramLinkCommand>();
+builder.Services.AddScoped<ConsumeTelegramTokenCommand>();
 
 builder.Services
     .AddHealthChecks()
@@ -543,6 +545,57 @@ app.MapPut("/api/notification-preferences", async (
     return changed ? Results.NoContent() : Results.Unauthorized();
 }).RequireAuthorization();
 
+app.MapPost("/api/telegram/link", async (
+    AppDbContext db,
+    HttpContext httpContext,
+    IConfiguration configuration) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var botUsername = configuration["Telegram:BotUsername"] ?? "";
+    if (string.IsNullOrEmpty(botUsername))
+        return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+
+    var result = await new CreateTelegramLinkCommand(db).ExecuteAsync(userId, botUsername);
+    return Results.Ok(new { deepLink = result.DeepLink });
+}).RequireAuthorization();
+
+app.MapPost("/api/telegram/webhook", async (
+    TelegramWebhookRequest? request,
+    AppDbContext db,
+    IConfiguration configuration) =>
+{
+    if (request is null)
+        return Results.BadRequest();
+
+    var secret = configuration["Telegram:WebhookSecret"] ?? "";
+    if (string.IsNullOrEmpty(secret) || request.Secret != secret)
+        return Results.Unauthorized();
+
+    if (request.Message?.Text is not string text || !text.StartsWith("/start "))
+        return Results.Ok();
+
+    var rawToken = text["/start ".Length..].Trim();
+    var chatId = request.Message.Chat?.Id ?? 0;
+    if (chatId == 0)
+        return Results.Ok();
+
+    await new ConsumeTelegramTokenCommand(db).ExecuteAsync(rawToken, chatId, DateTimeOffset.UtcNow);
+    return Results.Ok();
+});
+
+app.MapGet("/api/telegram/status", async (
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var connected = await db.TelegramDestinations.AnyAsync(d => d.UserId == userId);
+    return Results.Ok(new { connected });
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;
@@ -582,3 +635,6 @@ public sealed record MetadataIssueResponse(
 public sealed record EmailPreferenceResponse(bool EmailEnabled);
 public sealed record EmailPreferenceRequest(bool EmailEnabled);
 public sealed record DigestPreviewRequest(string Recipient, string? Language = null);
+public sealed record TelegramWebhookRequest(string? Secret, TelegramMessage? Message);
+public sealed record TelegramMessage(long? Id, TelegramChat? Chat, string? Text);
+public sealed record TelegramChat(long? Id);

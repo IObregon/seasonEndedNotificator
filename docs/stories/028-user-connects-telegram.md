@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Tokens are short-lived, opaque, hashed, and single use.
-- [ ] Webhook is authenticated and disabled by default during rollout.
-- [ ] Settings state comes only from server-verified binding.
+- [x] Tokens are short-lived, opaque, hashed, and single use.
+- [x] Webhook is authenticated and disabled by default during rollout.
+- [x] Settings state comes only from server-verified binding.
+
+## Result
+
+Completed on `2026-08-28`. `CreateTelegramLinkCommand` generates short-lived deep links with SHA256-hashed tokens, revoking previous pending tokens. `ConsumeTelegramTokenCommand` atomically consumes tokens, verifying expiry and one-time use, binding server-provided chat ID to user. `POST /api/telegram/link` requires auth, `POST /api/telegram/webhook` validates secret, `GET /api/telegram/status` shows connected state. Token hashes only stored — raw tokens never persisted.

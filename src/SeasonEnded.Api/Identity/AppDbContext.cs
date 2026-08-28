@@ -21,6 +21,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<DigestDelivery> DigestDeliveries => Set<DigestDelivery>();
     public DbSet<DigestItem> DigestItems => Set<DigestItem>();
     public DbSet<DeliveryAttempt> DeliveryAttempts => Set<DeliveryAttempt>();
+    public DbSet<TelegramConnectionToken> TelegramConnectionTokens => Set<TelegramConnectionToken>();
+    public DbSet<TelegramDestination> TelegramDestinations => Set<TelegramDestination>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -127,6 +129,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasKey(attempt => attempt.Id);
             entity.HasIndex(attempt => attempt.DigestDeliveryId);
             entity.Property(attempt => attempt.Outcome).IsRequired();
+        });
+
+        modelBuilder.Entity<TelegramConnectionToken>(entity =>
+        {
+            entity.HasKey(token => token.Id);
+            entity.HasIndex(token => token.TokenHash);
+            entity.Property(token => token.TokenHash).IsRequired();
+            entity.Property(token => token.Status).IsRequired();
+        });
+
+        modelBuilder.Entity<TelegramDestination>(entity =>
+        {
+            entity.HasKey(dest => dest.Id);
+            entity.HasIndex(dest => dest.UserId).IsUnique();
         });
 
     }
