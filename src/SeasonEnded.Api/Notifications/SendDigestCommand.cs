@@ -55,12 +55,7 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
             await emailSender.SendAsync(message, cancellationToken);
             outcome = DeliveryOutcome.Succeeded;
         }
-        catch (HttpRequestException ex)
-        {
-            outcome = DeliveryOutcome.TransientFailure;
-            sanitizedError = Sanitize(ex.Message);
-        }
-        catch (TimeoutException ex)
+        catch (Exception ex) when (ex is HttpRequestException or TimeoutException)
         {
             outcome = DeliveryOutcome.TransientFailure;
             sanitizedError = Sanitize(ex.Message);

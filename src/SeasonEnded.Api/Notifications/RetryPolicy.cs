@@ -7,13 +7,7 @@ public static class RetryPolicy
 
     public static DateTimeOffset? NextAttemptAt(int attemptNumber, DeliveryOutcome outcome)
     {
-        if (outcome == DeliveryOutcome.Succeeded)
-            return null;
-
-        if (outcome == DeliveryOutcome.PermanentFailure)
-            return null;
-
-        if (attemptNumber >= MaxAttempts)
+        if (outcome != DeliveryOutcome.TransientFailure || attemptNumber >= MaxAttempts)
             return null;
 
         var delayIndex = Math.Min(attemptNumber, DelayMinutes.Length - 1);
