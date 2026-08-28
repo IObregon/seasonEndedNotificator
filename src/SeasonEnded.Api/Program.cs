@@ -63,6 +63,7 @@ builder.Services
 builder.Services.AddHostedService<DigestHostedService>();
 builder.Services.AddScoped<CreateTelegramLinkCommand>();
 builder.Services.AddScoped<ConsumeTelegramTokenCommand>();
+builder.Services.AddScoped<DisconnectTelegramCommand>();
 
 builder.Services
     .AddHealthChecks()
@@ -598,6 +599,17 @@ app.MapGet("/api/telegram/status", async (
 
     var connected = await db.TelegramDestinations.AnyAsync(d => d.UserId == userId);
     return Results.Ok(new { connected });
+}).RequireAuthorization();
+
+app.MapDelete("/api/telegram/connection", async (
+    AppDbContext db,
+    HttpContext httpContext) =>
+{
+    if (!Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+
+    var result = await new DisconnectTelegramCommand(db).ExecuteAsync(userId);
+    return result ? Results.NoContent() : Results.Unauthorized();
 }).RequireAuthorization();
 
 app.Run();

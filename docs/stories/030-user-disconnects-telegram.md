@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Manual disconnect atomically revokes destination and disables preference.
-- [ ] Existing history remains auditable.
-- [ ] Only permanent invalid-chat responses trigger automatic revocation.
+- [x] Manual disconnect atomically revokes destination and disables preference.
+- [x] Existing history remains auditable.
+- [x] Only permanent invalid-chat responses trigger automatic revocation.
+
+## Result
+
+Completed on `2026-08-28`. `DisconnectTelegramCommand` removes `TelegramDestination` and sets `TelegramNotificationsEnabled = false` atomically. Delivery history remains auditable. `DELETE /api/telegram/connection` requires authentication, revokes only own destination. Idempotent for already-disconnected users.
