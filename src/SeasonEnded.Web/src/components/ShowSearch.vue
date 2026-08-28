@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { searchShows, type SearchState, type ShowResult } from '../showSearch'
 
+const props = defineProps<{ selectedProviderId: number | null }>()
 const emit = defineEmits<{ select: [providerId: number] }>()
 
 const query = ref('')
@@ -9,14 +10,16 @@ const results = ref<ShowResult[]>([])
 const state = ref<SearchState | 'loading'>('idle')
 
 async function search() {
-  if (!query.value.trim()) {
-    return
-  }
+  if (!query.value.trim()) return
   state.value = 'loading'
 
   const searchResult = await searchShows(query.value)
   results.value = searchResult.results
   state.value = searchResult.state
+}
+
+function select(providerId: number) {
+  emit('select', providerId)
 }
 </script>
 
@@ -31,12 +34,18 @@ async function search() {
       </div>
     </form>
 
-    <p v-if="state === 'empty'">No shows found.</p>
-    <p v-if="state === 'rate-limited'">Too many searches. Try again shortly.</p>
-    <p v-if="state === 'error'">Search is unavailable. Try again.</p>
+    <p v-if="state === 'loading'" class="search-status">Searching…</p>
+    <p v-if="state === 'empty'" class="search-status">No shows found.</p>
+    <p v-if="state === 'rate-limited'" class="search-status">Too many searches. Try again shortly.</p>
+    <p v-if="state === 'error'" class="search-status">Search is unavailable. Try again.</p>
 
     <ul v-if="results.length" class="results">
-      <li v-for="show in results" :key="show.providerId" @click="emit('select', show.providerId)">
+      <li
+        v-for="show in results"
+        :key="show.providerId"
+        :class="{ selected: show.providerId === props.selectedProviderId }"
+        @click="select(show.providerId)"
+      >
         <img v-if="show.imageUrl" :src="show.imageUrl" :alt="`${show.title} poster`" />
         <div v-else class="poster-placeholder" aria-hidden="true">No image</div>
         <div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   show: {
@@ -16,7 +16,12 @@ const props = defineProps<{
   }
 }>()
 
+const emit = defineEmits<{ close: [] }>()
 const followed = ref(false)
+
+watch(() => props.show.providerId, () => {
+  followed.value = false
+}, { immediate: true })
 
 async function follow() {
   const response = await fetch(`/api/shows/${props.show.providerId}/follow`, { method: 'POST' })
@@ -26,17 +31,18 @@ async function follow() {
 
 <template>
   <section class="show-details" aria-labelledby="details-title">
+    <button class="details-close" type="button" @click="emit('close')" aria-label="Close details">×</button>
     <h2 id="details-title">{{ show.title }}</h2>
-    <p>{{ show.premiereYear ?? 'Year unknown' }} · {{ show.status }}</p>
-    <button type="button" :disabled="followed" @click="follow">
-      {{ followed ? 'Following' : 'Follow show' }}
+    <p class="details-meta">{{ show.premiereYear ?? 'Year unknown' }} · {{ show.status }}</p>
+    <button type="button" :disabled="followed" class="follow-btn" @click="follow">
+      {{ followed ? '✓ Following' : 'Follow show' }}
     </button>
     <h3>Seasons</h3>
     <ul>
       <li v-for="season in show.seasons" :key="season.number">
         <strong>Season {{ season.number }}</strong>
-        <span v-if="season.completedAt">Completed {{ season.completedAt.slice(0, 10) }}</span>
-        <span v-else>{{ season.premiereDate ?? 'Unknown start' }} – {{ season.endDate ?? 'Unknown end' }}</span>
+        <span v-if="season.completedAt" class="season-completed">Completed {{ season.completedAt.slice(0, 10) }}</span>
+        <span v-else class="season-pending">{{ season.premiereDate ?? 'Unknown start' }} – {{ season.endDate ?? 'Unknown end' }}</span>
       </li>
     </ul>
   </section>
