@@ -494,14 +494,15 @@ app.MapGet("/api/follows", async (
         .Join(db.Shows,
             follow => follow.ShowId,
             show => show.Id,
-            (follow, show) => new FollowedShowResponse(
-                show.ProviderId,
-                show.Title,
-                show.PremiereYear,
-                show.Status,
-                show.ImageUrl,
-                follow.FollowedAt))
-        .OrderBy(show => show.Title)
+            (follow, show) => new { follow, show })
+        .OrderBy(x => x.show.Title)
+        .Select(x => new FollowedShowResponse(
+            x.show.ProviderId,
+            x.show.Title,
+            x.show.PremiereYear,
+            x.show.Status,
+            x.show.ImageUrl,
+            x.follow.FollowedAt))
         .ToListAsync();
 
     return Results.Ok(followedShows);
