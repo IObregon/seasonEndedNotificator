@@ -98,6 +98,10 @@
 
 ## Completion Checklist
 
-- [ ] Push reuses digest eligibility and language policy.
-- [ ] Provider outcomes and expired endpoints are handled idempotently.
-- [ ] Canary rollback to zero traffic is proven.
+- [x] Push reuses digest eligibility and language policy.
+- [x] Provider outcomes and expired endpoints are handled idempotently.
+- [x] Canary rollback to zero traffic is proven.
+
+## Result
+
+Completed on `2026-08-28`. `PushDigestMessages.Create` builds localized JSON payload with title, body, and URL. `SendDigestCommand` handles Push channel: sends via `IPushSender`, auto-revokes subscriptions on 404/410, records `LastSuccessAt`. `PrepareDigestCommand` includes Push channel for users with active subscriptions. Unique (UserId, Channel, DigestDate) prevents duplicate deliveries.

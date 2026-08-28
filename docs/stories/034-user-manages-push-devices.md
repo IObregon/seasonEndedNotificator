@@ -87,6 +87,10 @@
 
 ## Completion Checklist
 
-- [ ] Device data is sanitized and scoped to authenticated user.
-- [ ] Independent registration, listing, and revocation pass multi-device tests.
-- [ ] Digest replay cannot duplicate per-endpoint delivery.
+- [x] Device data is sanitized and scoped to authenticated user.
+- [x] Independent registration, listing, and revocation pass multi-device tests.
+- [x] Digest replay cannot duplicate per-endpoint delivery.
+
+## Result
+
+Completed on `2026-08-28`. `GET /api/push/subscriptions` lists active devices scoped to authenticated user with label, registration date, and last success. `DELETE /api/push/subscriptions/{id}` revokes only owned devices. `POST /api/push/subscriptions` upserts by endpoint, allowing multiple devices per user. Unique endpoint index prevents duplicate registrations.

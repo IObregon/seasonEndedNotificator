@@ -87,6 +87,7 @@ else
 }
 
 builder.Services.AddSingleton<ITelegramSender, UnconfiguredTelegramSender>();
+builder.Services.AddSingleton<IPushSender, UnconfiguredPushSender>();
 
 var app = builder.Build();
 app.UseAuthentication();
@@ -497,6 +498,7 @@ app.MapPost("/api/admin/digests/send", async (
     AppDbContext db,
     IEmailSender emailSender,
     ITelegramSender telegramSender,
+    IPushSender pushSender,
     CancellationToken cancellationToken) =>
 {
     var digestDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
@@ -505,7 +507,7 @@ app.MapPost("/api/admin/digests/send", async (
 
     foreach (var delivery in prepared)
     {
-        var result = await new SendDigestCommand(db, emailSender, telegramSender)
+        var result = await new SendDigestCommand(db, emailSender, telegramSender, pushSender)
             .ExecuteAsync(delivery.Id, cancellationToken);
         results.Add(new { deliveryId = delivery.Id, sent = result.Sent, reason = result.Reason });
     }
@@ -518,9 +520,10 @@ app.MapPost("/api/admin/digests/{deliveryId:guid}/retry", async (
     AppDbContext db,
     IEmailSender emailSender,
     ITelegramSender telegramSender,
+    IPushSender pushSender,
     CancellationToken cancellationToken) =>
 {
-    var result = await new SendDigestCommand(db, emailSender, telegramSender)
+    var result = await new SendDigestCommand(db, emailSender, telegramSender, pushSender)
         .ExecuteAsync(deliveryId, cancellationToken);
     return Results.Ok(new { sent = result.Sent, reason = result.Reason });
 }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));

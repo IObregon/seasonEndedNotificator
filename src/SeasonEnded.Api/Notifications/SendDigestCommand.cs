@@ -5,7 +5,7 @@ using SeasonEnded.Api.SeasonTracking;
 
 namespace SeasonEnded.Api.Notifications;
 
-public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender)
+public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender, IPushSender pushSender)
 {
     public async Task<SendDigestResult> ExecuteAsync(Guid deliveryId, CancellationToken cancellationToken = default)
     {
@@ -63,6 +63,31 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
 
                 var text = TelegramDigestMessages.Create(user.PreferredLanguage, candidates);
                 await telegramSender.SendAsync(dest.ChatId, text, cancellationToken);
+            }
+            else if (deliveryDto.Channel == "Push")
+            {
+                var sub = await context.PushSubscriptions
+                    .FirstOrDefaultAsync(s => s.UserId == deliveryDto.UserId && s.Active, cancellationToken);
+                if (sub is null)
+                {
+                    await UpdateDeliveryStatusAsync(context, deliveryId, "Skipped", null, cancellationToken);
+                    return new SendDigestResult(Sent: false, Reason: "NoPushSubscription");
+                }
+
+                var payload = PushDigestMessages.Create(user.PreferredLanguage, candidates);
+                var pushResult = await pushSender.SendAsync(sub, payload, cancellationToken);
+                if (!pushResult.Succeeded && pushResult.StatusCode is 404 or 410)
+                {
+                    sub.Active = false;
+                    await context.SaveChangesAsync(cancellationToken);
+                    throw new InvalidOperationException($"Push endpoint expired: {pushResult.StatusCode}");
+                }
+
+                if (!pushResult.Succeeded)
+                    throw new HttpRequestException($"Push failed: {pushResult.StatusCode}");
+
+                sub.LastSuccessAt = DateTimeOffset.UtcNow;
+                await context.SaveChangesAsync(cancellationToken);
             }
             else
             {

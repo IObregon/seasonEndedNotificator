@@ -9,15 +9,20 @@ public sealed class PrepareDigestCommand(AppDbContext context)
     {
         var results = new List<DigestDelivery>();
 
-        results.AddRange(await PrepareChannelAsync(
-            "Email", digestDate,
-            (await new EmailRecipientQuery(context).GetAsync()).Select(u => u.Id).ToList(),
-            cancellationToken));
+        var emailUserIds = (await new EmailRecipientQuery(context).GetAsync())
+            .Select(u => u.Id).ToList();
+        results.AddRange(await PrepareChannelAsync("Email", digestDate, emailUserIds, cancellationToken));
 
-        results.AddRange(await PrepareChannelAsync(
-            "Telegram", digestDate,
-            (await new TelegramRecipientQuery(context).GetAsync()).Select(r => r.UserId).ToList(),
-            cancellationToken));
+        var telegramUserIds = (await new TelegramRecipientQuery(context).GetAsync())
+            .Select(r => r.UserId).ToList();
+        results.AddRange(await PrepareChannelAsync("Telegram", digestDate, telegramUserIds, cancellationToken));
+
+        var pushUserIds = await context.PushSubscriptions
+            .Where(s => s.Active)
+            .Select(s => s.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        results.AddRange(await PrepareChannelAsync("Push", digestDate, pushUserIds, cancellationToken));
 
         return results;
     }
