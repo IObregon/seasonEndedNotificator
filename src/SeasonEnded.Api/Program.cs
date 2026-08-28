@@ -9,6 +9,7 @@ using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Jobs;
 using SeasonEnded.Api.Notifications;
+using SeasonEnded.Api.SeasonTracking;
 using System.Net.Mail;
 using System.Security.Claims;
 
@@ -213,6 +214,89 @@ if (app.Environment.IsDevelopment())
         await sender.SendAsync(message, cancellationToken);
         return Results.NoContent();
     }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
+
+    app.MapPost("/api/dev/simulate-finale", async (
+        SimulateFinaleRequest? request,
+        AppDbContext db,
+        IEmailSender emailSender,
+        ITelegramSender telegramSender,
+        IPushSender pushSender,
+        HttpContext httpContext,
+        CancellationToken cancellationToken) =>
+    {
+        if (httpContext.GetUserId() is not { } userId)
+            return Results.Unauthorized();
+
+        if (request is null || request.ProviderId <= 0)
+            return Results.BadRequest("ProviderId is required.");
+
+        var show = await db.Shows.FirstOrDefaultAsync(s => s.ProviderId == request.ProviderId, cancellationToken);
+        if (show is null)
+            return Results.NotFound($"Show with ProviderId {request.ProviderId} not found. Search for it first via GET /api/shows/{request.ProviderId}.");
+
+        var follow = await db.ShowFollows.FirstOrDefaultAsync(f => f.UserId == userId && f.ShowId == show.Id, cancellationToken);
+        if (follow is null)
+            return Results.BadRequest("You must follow this show first. Use POST /api/shows/{providerId}/follow.");
+
+        var season = request.SeasonNumber.HasValue
+            ? show.Seasons.FirstOrDefault(s => s.Number == request.SeasonNumber.Value)
+            : show.Seasons.OrderByDescending(s => s.Number).FirstOrDefault();
+
+        if (season is null)
+            return Results.NotFound("No seasons found for this show.");
+
+        if (season.CompletedAt is not null)
+        {
+            var existingEvent = await db.SeasonCompletionEvents
+                .FirstOrDefaultAsync(e => e.SeasonId == season.Id, cancellationToken);
+            if (existingEvent is not null)
+            {
+                var existingDelivery = await db.DigestDeliveries
+                    .FirstOrDefaultAsync(d => d.UserId == userId && d.DigestDate == DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date), cancellationToken);
+                if (existingDelivery is not null)
+                    return Results.Ok(new
+                    {
+                        message = "Season already completed and digest already prepared today.",
+                        showTitle = show.Title,
+                        seasonNumber = season.Number,
+                        completedAt = season.CompletedAt,
+                        deliveryId = existingDelivery.Id,
+                        deliveryStatus = existingDelivery.Status
+                    });
+            }
+        }
+
+        var completedAt = DateTimeOffset.UtcNow;
+        season.CompletedAt = completedAt;
+        season.UncertaintyReason = null;
+
+        db.SeasonCompletionEvents.Add(new SeasonCompletionEvent
+        {
+            SeasonId = season.Id,
+            CompletedAt = completedAt
+        });
+        await db.SaveChangesAsync(cancellationToken);
+
+        var digestDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
+        var prepared = await new PrepareDigestCommand(db).ExecuteAsync(digestDate, cancellationToken);
+        var results = new List<object>();
+
+        foreach (var delivery in prepared)
+        {
+            var result = await new SendDigestCommand(db, emailSender, telegramSender, pushSender)
+                .ExecuteAsync(delivery.Id, cancellationToken);
+            results.Add(new { deliveryId = delivery.Id, delivery.Channel, sent = result.Sent, reason = result.Reason });
+        }
+
+        return Results.Ok(new
+        {
+            message = "Finale simulated. Check Mailpit at http://localhost:8025 for the digest email.",
+            showTitle = show.Title,
+            seasonNumber = season.Number,
+            completedAt = completedAt,
+            deliveries = results
+        });
+    }).RequireAuthorization();
 
     app.MapPost("/api/invitations", async (
         InviteUserRequest? request,
@@ -903,6 +987,7 @@ public sealed record TelegramWebhookRequest(string? Secret, TelegramMessage? Mes
 public sealed record TelegramMessage(long? Id, TelegramChat? Chat, string? Text);
 public sealed record TelegramChat(long? Id);
 public sealed record PushSubscriptionRequest(string Endpoint, string P256DH, string Auth, string? Label = null);
+public sealed record SimulateFinaleRequest(int ProviderId, int? SeasonNumber = null);
 
 internal static class HttpContextExtensions
 {
