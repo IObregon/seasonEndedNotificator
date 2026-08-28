@@ -151,6 +151,19 @@ app.MapGet("/api/auth/me", (HttpContext httpContext) =>
 
 if (app.Environment.IsDevelopment())
 {
+    app.MapPost("/api/dev/auto-login", async (
+        AppDbContext db,
+        HttpContext httpContext) =>
+    {
+        var bootstrapEmail = app.Configuration["BootstrapAdmin:Email"] ?? "admin@localhost";
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == bootstrapEmail);
+        if (user is null)
+            return Results.NotFound("No bootstrap admin found. Set BootstrapAdmin:Email in configuration.");
+
+        await SessionSignIn.SignInUserAsync(httpContext, user.Id, user.Email, user.Role);
+        return Results.Ok(new { email = user.Email, role = user.Role.ToString() });
+    });
+
     app.MapPost("/api/dev/email-test", async (
         EmailTestRequest? request,
         IEmailSender sender,

@@ -31,12 +31,23 @@ const authChecking = ref(true)
 const authenticated = ref(false)
 
 onMounted(async () => {
-  const response = await fetch('/api/auth/me')
-  authChecking.value = false
-  if (response.ok) {
+  const meResponse = await fetch('/api/auth/me')
+  if (meResponse.ok) {
     authenticated.value = true
+    authChecking.value = false
     await loadFollows()
+    return
   }
+
+  const autoLoginResponse = await fetch('/api/dev/auto-login', { method: 'POST' })
+  if (autoLoginResponse.ok) {
+    authenticated.value = true
+    authChecking.value = false
+    await loadFollows()
+    return
+  }
+
+  authChecking.value = false
 })
 
 function onAuthenticated() {
