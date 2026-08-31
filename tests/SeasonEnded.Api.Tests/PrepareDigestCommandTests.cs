@@ -79,6 +79,38 @@ public sealed class PrepareDigestCommandTests
         Assert.Empty(deliveries);
     }
 
+    [Fact]
+    public async Task Multiple_eligible_users_each_get_delivery()
+    {
+        await using var context = CreateContext();
+        var user1 = new User { Email = "user1@example.test" };
+        var user2 = new User { Email = "user2@example.test" };
+        var user3 = new User { Email = "user3@example.test" };
+        var show = new Show { Title = "Test Show", ProviderId = 1, Status = "Ended" };
+        var season = new Season { ShowId = show.Id, Number = 1, EndDate = new DateOnly(2024, 1, 1), ProviderSeasonId = 1 };
+        var completion = new SeasonCompletionEvent
+        {
+            SeasonId = season.Id, CompletedAt = DateTimeOffset.UtcNow.AddDays(-1), ConfirmedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        context.Users.AddRange(user1, user2, user3);
+        context.Shows.Add(show);
+        context.Seasons.Add(season);
+        context.SeasonCompletionEvents.Add(completion);
+        context.ShowFollows.AddRange(
+            new ShowFollow { UserId = user1.Id, ShowId = show.Id, FollowedAt = DateTime.UtcNow.AddDays(-10) },
+            new ShowFollow { UserId = user2.Id, ShowId = show.Id, FollowedAt = DateTime.UtcNow.AddDays(-10) },
+            new ShowFollow { UserId = user3.Id, ShowId = show.Id, FollowedAt = DateTime.UtcNow.AddDays(-10) });
+        await context.SaveChangesAsync();
+
+        var digestDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var deliveries = await new PrepareDigestCommand(context).ExecuteAsync(digestDate);
+
+        Assert.Equal(3, deliveries.Count);
+        Assert.Contains(deliveries, d => d.UserId == user1.Id);
+        Assert.Contains(deliveries, d => d.UserId == user2.Id);
+        Assert.Contains(deliveries, d => d.UserId == user3.Id);
+    }
+
     private static AppDbContext CreateContext() => new(
         new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
