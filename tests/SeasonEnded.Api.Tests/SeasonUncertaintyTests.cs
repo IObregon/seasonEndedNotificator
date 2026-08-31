@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.SeasonTracking;
@@ -46,7 +47,7 @@ public sealed class SeasonUncertaintyTests
 
         var start = DateTimeOffset.UtcNow.AddHours(-2);
         var validEvidence = new FinaleEvidence(8, "regular", true, start, 60);
-        var result = await new ConfirmSeasonCompletionCommand(context)
+        var result = await new ConfirmSeasonCompletionCommand(context, NullLogger<ConfirmSeasonCompletionCommand>.Instance)
             .ExecuteAsync(season.Id, validEvidence, DateTimeOffset.UtcNow);
 
         Assert.True(result.Created);

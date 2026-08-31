@@ -91,6 +91,7 @@ public sealed class DailyDigestJobTests
         services.AddSingleton<IPushSender, UnconfiguredPushSender>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<RetryPolicy>();
+        services.AddLogging();
         services.AddScoped<PrepareDigestCommand>();
         services.AddScoped<SendDigestCommand>();
         services.AddScoped<DailyDigestJob>();

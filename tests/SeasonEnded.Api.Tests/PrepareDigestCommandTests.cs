@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.Notifications;
@@ -28,7 +29,7 @@ public sealed class PrepareDigestCommandTests
         await context.SaveChangesAsync();
 
         var digestDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var deliveries = await new PrepareDigestCommand(context).ExecuteAsync(digestDate);
+        var deliveries = await new PrepareDigestCommand(context, NullLogger<PrepareDigestCommand>.Instance).ExecuteAsync(digestDate);
 
         Assert.Single(deliveries);
         Assert.Equal(user.Id, deliveries[0].UserId);
@@ -57,8 +58,8 @@ public sealed class PrepareDigestCommandTests
         await context.SaveChangesAsync();
 
         var digestDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var first = await new PrepareDigestCommand(context).ExecuteAsync(digestDate);
-        var second = await new PrepareDigestCommand(context).ExecuteAsync(digestDate);
+        var first = await new PrepareDigestCommand(context, NullLogger<PrepareDigestCommand>.Instance).ExecuteAsync(digestDate);
+        var second = await new PrepareDigestCommand(context, NullLogger<PrepareDigestCommand>.Instance).ExecuteAsync(digestDate);
 
         Assert.Equal(first[0].Id, second[0].Id);
         var totalDeliveries = await context.DigestDeliveries.CountAsync();
@@ -74,7 +75,7 @@ public sealed class PrepareDigestCommandTests
         await context.SaveChangesAsync();
 
         var digestDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var deliveries = await new PrepareDigestCommand(context).ExecuteAsync(digestDate);
+        var deliveries = await new PrepareDigestCommand(context, NullLogger<PrepareDigestCommand>.Instance).ExecuteAsync(digestDate);
 
         Assert.Empty(deliveries);
     }
@@ -103,7 +104,7 @@ public sealed class PrepareDigestCommandTests
         await context.SaveChangesAsync();
 
         var digestDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var deliveries = await new PrepareDigestCommand(context).ExecuteAsync(digestDate);
+        var deliveries = await new PrepareDigestCommand(context, NullLogger<PrepareDigestCommand>.Instance).ExecuteAsync(digestDate);
 
         Assert.Equal(3, deliveries.Count);
         Assert.Contains(deliveries, d => d.UserId == user1.Id);

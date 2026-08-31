@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SeasonEnded.Api.Identity;
 
 namespace SeasonEnded.Api.Notifications;
 
-public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender, IPushSender pushSender, TimeProvider timeProvider, RetryPolicy retryPolicy)
+public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender, IPushSender pushSender, TimeProvider timeProvider, RetryPolicy retryPolicy, ILogger<SendDigestCommand> logger)
 {
     public async Task<SendDigestResult> ExecuteAsync(Guid deliveryId, CancellationToken cancellationToken = default)
     {
@@ -123,6 +124,11 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
         var nextAttempt = retryPolicy.NextAttemptAt(attemptNumber, outcome);
 
         await UpdateDeliveryStatusAsync(context, deliveryId, newStatus, nextAttempt, cancellationToken);
+
+        if (outcome == DeliveryOutcome.Succeeded)
+            logger.LogInformation("Digest {DeliveryId} sent via {Channel}", deliveryId, deliveryDto.Channel);
+        else
+            logger.LogWarning("Digest {DeliveryId} failed via {Channel}: {Outcome}", deliveryId, deliveryDto.Channel, outcome);
 
         return new SendDigestResult(
             Sent: outcome == DeliveryOutcome.Succeeded,

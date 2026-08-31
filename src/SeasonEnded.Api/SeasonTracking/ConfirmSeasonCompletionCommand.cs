@@ -1,9 +1,10 @@
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.Catalog;
+using Microsoft.Extensions.Logging;
 
 namespace SeasonEnded.Api.SeasonTracking;
 
-public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
+public sealed class ConfirmSeasonCompletionCommand(AppDbContext context, ILogger<ConfirmSeasonCompletionCommand> logger)
 {
     public async Task<ConfirmSeasonCompletionResult> ExecuteAsync(
         Guid seasonId,
@@ -60,6 +61,7 @@ public sealed class ConfirmSeasonCompletionCommand(AppDbContext context)
             CompletedAt = completedAt
         });
         await context.SaveChangesAsync();
+        logger.LogInformation("Season {SeasonId} marked completed at {CompletedAt}", season.Id, completedAt);
         return new ConfirmSeasonCompletionResult(Created: true);
     }
 }

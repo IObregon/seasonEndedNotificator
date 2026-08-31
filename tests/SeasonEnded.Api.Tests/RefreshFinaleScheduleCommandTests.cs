@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.SeasonTracking;
@@ -25,7 +26,7 @@ public sealed class RefreshFinaleScheduleCommandTests
             RuntimeMinutes: 60,
             new FinaleEvidenceAssessment(true, true, false, false, true)));
 
-        var result = await new RefreshFinaleScheduleCommand(context, provider)
+        var result = await new RefreshFinaleScheduleCommand(context, provider, NullLogger<ConfirmSeasonCompletionCommand>.Instance)
             .ExecuteAsync(season.Id, oldStart.AddHours(2), CancellationToken.None);
 
         Assert.False(result.Completed);
@@ -47,7 +48,7 @@ public sealed class RefreshFinaleScheduleCommandTests
             revisedStart,
             60,
             new FinaleEvidenceAssessment(true, true, false, false, true)));
-        var command = new RefreshFinaleScheduleCommand(context, provider);
+        var command = new RefreshFinaleScheduleCommand(context, provider, NullLogger<ConfirmSeasonCompletionCommand>.Instance);
 
         var first = await command.ExecuteAsync(
             season.Id, revisedStart.AddMinutes(60), CancellationToken.None);
@@ -70,7 +71,7 @@ public sealed class RefreshFinaleScheduleCommandTests
         var provider = new StubSchedule(new HttpRequestException("unavailable"));
 
         await Assert.ThrowsAsync<HttpRequestException>(() =>
-            new RefreshFinaleScheduleCommand(context, provider)
+            new RefreshFinaleScheduleCommand(context, provider, NullLogger<ConfirmSeasonCompletionCommand>.Instance)
                 .ExecuteAsync(season.Id, storedStart.AddDays(1), CancellationToken.None));
 
         Assert.Equal(storedStart, season.FinaleAirStart);
@@ -92,7 +93,7 @@ public sealed class RefreshFinaleScheduleCommandTests
             60,
             new FinaleEvidenceAssessment(true, true, false, true, true)));
 
-        var result = await new RefreshFinaleScheduleCommand(context, provider)
+        var result = await new RefreshFinaleScheduleCommand(context, provider, NullLogger<ConfirmSeasonCompletionCommand>.Instance)
             .ExecuteAsync(season.Id, start.AddDays(1), CancellationToken.None);
 
         Assert.False(result.Completed);

@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SeasonEnded.Api.Identity;
 
 namespace SeasonEnded.Api.Notifications;
 
-public sealed class PrepareDigestCommand(AppDbContext context)
+public sealed class PrepareDigestCommand(AppDbContext context, ILogger<PrepareDigestCommand> logger)
 {
     public async Task<List<DigestDelivery>> ExecuteAsync(DateOnly digestDate, CancellationToken cancellationToken = default)
     {
@@ -24,6 +25,7 @@ public sealed class PrepareDigestCommand(AppDbContext context)
             .ToListAsync(cancellationToken);
         results.AddRange(await PrepareChannelAsync("Push", digestDate, pushUserIds, cancellationToken));
 
+        logger.LogInformation("Prepared {Count} digest deliveries for {Date}", results.Count, digestDate);
         return results;
     }
 

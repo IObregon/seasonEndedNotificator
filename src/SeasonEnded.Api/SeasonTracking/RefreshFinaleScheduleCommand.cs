@@ -1,10 +1,12 @@
+using Microsoft.Extensions.Logging;
 using SeasonEnded.Api.Identity;
 
 namespace SeasonEnded.Api.SeasonTracking;
 
 public sealed class RefreshFinaleScheduleCommand(
     AppDbContext context,
-    ILatestFinaleSchedule provider)
+    ILatestFinaleSchedule provider,
+    ILogger<ConfirmSeasonCompletionCommand> completionLogger)
 {
     public async Task<RefreshFinaleScheduleResult> ExecuteAsync(
         Guid seasonId,
@@ -33,7 +35,7 @@ public sealed class RefreshFinaleScheduleCommand(
             refreshed.ExplicitFinale,
             refreshed.AirStart,
             refreshed.RuntimeMinutes);
-        var completion = await new ConfirmSeasonCompletionCommand(context)
+        var completion = await new ConfirmSeasonCompletionCommand(context, completionLogger)
             .ExecuteAsync(seasonId, evidence, now);
         if (!completion.Created)
             await context.SaveChangesAsync(cancellationToken);

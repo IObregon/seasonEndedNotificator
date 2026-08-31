@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using SeasonEnded.Api.Catalog;
 using SeasonEnded.Api.Identity;
 using SeasonEnded.Api.SeasonTracking;
@@ -20,7 +21,7 @@ public sealed class ConfirmSeasonCompletionCommandTests
         var evidence = new FinaleEvidence(8, "regular", true, start, 60);
         var completedAt = start.AddMinutes(60);
 
-        var result = await new ConfirmSeasonCompletionCommand(context)
+        var result = await new ConfirmSeasonCompletionCommand(context, NullLogger<ConfirmSeasonCompletionCommand>.Instance)
             .ExecuteAsync(season.Id, evidence, completedAt);
 
         Assert.True(result.Created);
@@ -41,7 +42,7 @@ public sealed class ConfirmSeasonCompletionCommandTests
         await context.SaveChangesAsync();
         var start = DateTimeOffset.UtcNow.AddHours(-2);
         var evidence = new FinaleEvidence(8, "regular", true, start, 60);
-        var command = new ConfirmSeasonCompletionCommand(context);
+        var command = new ConfirmSeasonCompletionCommand(context, NullLogger<ConfirmSeasonCompletionCommand>.Instance);
 
         await command.ExecuteAsync(season.Id, evidence, DateTimeOffset.UtcNow);
         var second = await command.ExecuteAsync(season.Id, evidence, DateTimeOffset.UtcNow);
@@ -61,7 +62,7 @@ public sealed class ConfirmSeasonCompletionCommandTests
         await context.SaveChangesAsync();
         var evidence = new DateOnlyFinaleEvidence(
             8, "regular", true, new DateOnly(2026, 8, 27), "UTC");
-        var command = new ConfirmSeasonCompletionCommand(context);
+        var command = new ConfirmSeasonCompletionCommand(context, NullLogger<ConfirmSeasonCompletionCommand>.Instance);
 
         var before = await command.ExecuteAsync(
             season.Id, evidence, new DateTimeOffset(2026, 8, 27, 23, 59, 59, TimeSpan.Zero));
@@ -89,7 +90,7 @@ public sealed class ConfirmSeasonCompletionCommandTests
         var now = new DateTimeOffset(2026, 8, 28, 0, 0, 0, TimeSpan.Zero);
         var partial = new BatchReleaseEvidence(1, true, 4, 8, new DateOnly(2026, 8, 27), "UTC");
         var complete = new BatchReleaseEvidence(2, true, 8, 8, new DateOnly(2026, 8, 27), "UTC");
-        var command = new ConfirmSeasonCompletionCommand(context);
+        var command = new ConfirmSeasonCompletionCommand(context, NullLogger<ConfirmSeasonCompletionCommand>.Instance);
 
         var partialResult = await command.ExecuteAsync(partialSeason.Id, partial, now);
         var completeResult = await command.ExecuteAsync(completeSeason.Id, complete, now);
