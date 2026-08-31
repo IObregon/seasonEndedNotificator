@@ -30,7 +30,7 @@ public abstract class DailyJobHostedService<TOptions>(
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var lastCompleted = await db.JobExecutions
             .Where(e => e.JobName == JobName && e.Status.StartsWith("Completed"))
-            .MaxAsync(e => e.CompletedAt, cancellationToken);
+            .MaxAsync(e => (DateTimeOffset?)e.CompletedAt, cancellationToken);
         var now = timeProvider.GetUtcNow();
         if (!DailySchedule.IsDue(options.Value, now, lastCompleted))
             return;
