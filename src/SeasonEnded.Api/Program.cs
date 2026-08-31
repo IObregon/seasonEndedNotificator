@@ -90,8 +90,35 @@ else
     builder.Services.AddSingleton<IEmailSender, UnconfiguredEmailSender>();
 }
 
-builder.Services.AddSingleton<ITelegramSender, UnconfiguredTelegramSender>();
-builder.Services.AddSingleton<IPushSender, UnconfiguredPushSender>();
+var telegramToken = builder.Configuration["Telegram:BotToken"];
+if (!string.IsNullOrWhiteSpace(telegramToken))
+{
+    builder.Services.AddHttpClient("TelegramBot", client =>
+    {
+        client.BaseAddress = new Uri("https://api.telegram.org");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("SeasonEnded/1.0");
+    });
+    builder.Services.AddOptions<TelegramOptions>()
+        .BindConfiguration(TelegramOptions.SectionName);
+    builder.Services.AddSingleton<ITelegramSender, TelegramBotSender>();
+}
+else
+{
+    builder.Services.AddSingleton<ITelegramSender, UnconfiguredTelegramSender>();
+}
+
+var pushPrivateKey = builder.Configuration["Push:PrivateKey"];
+if (!string.IsNullOrWhiteSpace(pushPrivateKey))
+{
+    builder.Services.AddHttpClient("WebPush");
+    builder.Services.AddOptions<PushOptions>()
+        .BindConfiguration(PushOptions.SectionName);
+    builder.Services.AddSingleton<IPushSender, WebPushSender>();
+}
+else
+{
+    builder.Services.AddSingleton<IPushSender, UnconfiguredPushSender>();
+}
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

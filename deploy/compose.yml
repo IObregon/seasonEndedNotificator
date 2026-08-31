@@ -30,6 +30,11 @@ services:
       Email__Smtp__FromAddress: notifications@season-ended.local
       Email__Smtp__FromName: Season Ended
       BootstrapAdmin__Email: admin@localhost
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
+      Telegram__BotUsername: ${TELEGRAM_BOT_USERNAME:-}
+      Push__PublicKey: ${PUSH_PUBLIC_KEY:-}
+      Push__PrivateKey: ${PUSH_PRIVATE_KEY:-}
+      Push__Subject: ${PUSH_SUBJECT:-}
     depends_on:
       postgres:
         condition: service_healthy
