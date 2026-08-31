@@ -60,6 +60,7 @@ builder.Services
 builder.Services.AddHostedService<MetadataRefreshHostedService>();
 builder.Services.AddScoped<DailyDigestJob>();
 builder.Services.AddScoped<PrepareDigestCommand>();
+builder.Services.AddScoped<RetryPolicy>();
 builder.Services.AddScoped<SendDigestCommand>();
 builder.Services
     .AddOptions<DigestScheduleOptions>()

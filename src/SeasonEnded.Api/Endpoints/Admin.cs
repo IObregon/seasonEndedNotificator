@@ -140,19 +140,17 @@ public static class AdminEndpoints
 
         app.MapPost("/api/admin/digests/send", async (
             AppDbContext db,
-            IEmailSender emailSender,
-            ITelegramSender telegramSender,
-            IPushSender pushSender,
+            PrepareDigestCommand prepare,
+            SendDigestCommand send,
             CancellationToken cancellationToken) =>
         {
             var digestDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
-            var prepared = await new PrepareDigestCommand(db).ExecuteAsync(digestDate, cancellationToken);
+            var prepared = await prepare.ExecuteAsync(digestDate, cancellationToken);
             var results = new List<object>();
 
             foreach (var delivery in prepared)
             {
-                var result = await new SendDigestCommand(db, emailSender, telegramSender, pushSender)
-                    .ExecuteAsync(delivery.Id, cancellationToken);
+                var result = await send.ExecuteAsync(delivery.Id, cancellationToken);
                 results.Add(new { deliveryId = delivery.Id, sent = result.Sent, reason = result.Reason });
             }
 
@@ -161,14 +159,10 @@ public static class AdminEndpoints
 
         app.MapPost("/api/admin/digests/{deliveryId:guid}/retry", async (
             Guid deliveryId,
-            AppDbContext db,
-            IEmailSender emailSender,
-            ITelegramSender telegramSender,
-            IPushSender pushSender,
+            SendDigestCommand send,
             CancellationToken cancellationToken) =>
         {
-            var result = await new SendDigestCommand(db, emailSender, telegramSender, pushSender)
-                .ExecuteAsync(deliveryId, cancellationToken);
+            var result = await send.ExecuteAsync(deliveryId, cancellationToken);
             return Results.Ok(new { sent = result.Sent, reason = result.Reason });
         }).RequireAuthorization(policy => policy.RequireRole(UserRole.Admin.ToString()));
 

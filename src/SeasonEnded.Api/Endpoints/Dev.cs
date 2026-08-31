@@ -103,9 +103,8 @@ public static class DevEndpoints
         app.MapPost("/api/dev/simulate-finale", async (
             SimulateFinaleRequest? request,
             AppDbContext db,
-            IEmailSender emailSender,
-            ITelegramSender telegramSender,
-            IPushSender pushSender,
+            PrepareDigestCommand prepare,
+            SendDigestCommand send,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
@@ -165,13 +164,12 @@ public static class DevEndpoints
             await db.SaveChangesAsync(cancellationToken);
 
             var digestDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
-            var prepared = await new PrepareDigestCommand(db).ExecuteAsync(digestDate, cancellationToken);
+            var prepared = await prepare.ExecuteAsync(digestDate, cancellationToken);
             var results = new List<object>();
 
             foreach (var delivery in prepared)
             {
-                var result = await new SendDigestCommand(db, emailSender, telegramSender, pushSender)
-                    .ExecuteAsync(delivery.Id, cancellationToken);
+                var result = await send.ExecuteAsync(delivery.Id, cancellationToken);
                 results.Add(new { deliveryId = delivery.Id, delivery.Channel, sent = result.Sent, reason = result.Reason });
             }
 

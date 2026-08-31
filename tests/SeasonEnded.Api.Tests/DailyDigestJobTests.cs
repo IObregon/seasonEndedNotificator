@@ -89,6 +89,8 @@ public sealed class DailyDigestJobTests
         services.AddSingleton<IEmailSender>(sender);
         services.AddSingleton<ITelegramSender, UnconfiguredTelegramSender>();
         services.AddSingleton<IPushSender, UnconfiguredPushSender>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<RetryPolicy>();
         services.AddScoped<PrepareDigestCommand>();
         services.AddScoped<SendDigestCommand>();
         services.AddScoped<DailyDigestJob>();

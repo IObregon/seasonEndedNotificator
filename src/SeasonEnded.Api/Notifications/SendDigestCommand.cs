@@ -3,7 +3,7 @@ using SeasonEnded.Api.Identity;
 
 namespace SeasonEnded.Api.Notifications;
 
-public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender, IPushSender pushSender)
+public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSender, ITelegramSender telegramSender, IPushSender pushSender, TimeProvider timeProvider, RetryPolicy retryPolicy)
 {
     public async Task<SendDigestResult> ExecuteAsync(Guid deliveryId, CancellationToken cancellationToken = default)
     {
@@ -84,7 +84,7 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
                 if (!pushResult.Succeeded)
                     throw new HttpRequestException($"Push failed: {pushResult.StatusCode}");
 
-                sub.LastSuccessAt = DateTimeOffset.UtcNow;
+                sub.LastSuccessAt = timeProvider.GetUtcNow();
                 await context.SaveChangesAsync(cancellationToken);
             }
             else
@@ -120,7 +120,7 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
             DeliveryOutcome.PermanentFailure => "PermanentlyFailed",
             _ => "Failed"
         };
-        var nextAttempt = RetryPolicy.NextAttemptAt(attemptNumber, outcome);
+        var nextAttempt = retryPolicy.NextAttemptAt(attemptNumber, outcome);
 
         await UpdateDeliveryStatusAsync(context, deliveryId, newStatus, nextAttempt, cancellationToken);
 
