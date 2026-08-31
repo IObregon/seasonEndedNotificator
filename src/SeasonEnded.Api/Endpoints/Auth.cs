@@ -36,7 +36,7 @@ public static class AuthEndpoints
             var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
             await new RequestMagicLinkCommand(db, sender, baseUrl).ExecuteAsync(email.Address);
             return Results.Ok(new { message = responseMessage });
-        });
+        }).RequireRateLimiting("auth");
 
         app.MapPost("/api/auth/magic-link/consume", async (
             ConsumeMagicLinkRequest? request,
@@ -54,7 +54,7 @@ public static class AuthEndpoints
             var user = await db.Users.FindAsync(result.UserId);
             await SessionSignIn.SignInUserAsync(httpContext, user!.Id, user.Email, user.Role);
             return Results.NoContent();
-        });
+        }).RequireRateLimiting("auth");
 
         app.MapPut("/api/me/language", async (
             SetLanguageRequest? request,

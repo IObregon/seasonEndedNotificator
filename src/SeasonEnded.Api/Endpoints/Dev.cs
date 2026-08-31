@@ -30,7 +30,7 @@ public static class DevEndpoints
 
             await SessionSignIn.SignInUserAsync(httpContext, result.UserId!.Value, result.Email!, UserRole.User);
             return Results.NoContent();
-        });
+        }).RequireRateLimiting("auth");
 
         return app;
     }
