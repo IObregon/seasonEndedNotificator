@@ -61,33 +61,16 @@ services:
     build:
       context: ..
       dockerfile: src/SeasonEnded.Web/Dockerfile
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health | grep -q Healthy"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    restart: unless-stopped
-
-  caddy:
-    image: caddy:2.10-alpine
-    environment:
-      APP_DOMAIN: ${APP_DOMAIN:-season-ended.localhost}
     ports:
       - "127.0.0.1:80:80"
       - "127.0.0.1:443:443"
     extra_hosts:
       - "${APP_DOMAIN:-season-ended.localhost}:127.0.0.1"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
     depends_on:
       api:
         condition: service_healthy
-      web:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-check-certificate -qO- https://$${APP_DOMAIN}/health/live | grep -q Healthy"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health | grep -q Healthy"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -95,5 +78,3 @@ services:
 
 volumes:
   postgres-data:
-  caddy-data:
-  caddy-config:

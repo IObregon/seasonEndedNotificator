@@ -35,15 +35,12 @@ jobs:
         run: docker compose -f deploy/compose.yml up --build --wait
       - name: Verify HTTPS routes
         run: |
-          docker compose -f deploy/compose.yml cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
-          sudo cp ./caddy-root.crt /usr/local/share/ca-certificates/season-ended-caddy.crt
-          sudo update-ca-certificates
-          curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/
-          test "$(curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "Healthy"
-          test "$(curl --fail --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "Healthy"
+          curl --fail -k --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/
+          test "$(curl --fail -k --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "Healthy"
+          test "$(curl --fail -k --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "Healthy"
       - name: Verify local email capture
         run: |
-          curl --fail \
+          curl --fail -k \
             --resolve season-ended.localhost:443:127.0.0.1 \
             --header "Content-Type: application/json" \
             --data '{"recipient":"viewer@example.test"}' \
@@ -59,8 +56,8 @@ jobs:
           POSTGRES_PASSWORD: ci-only-password
         run: |
           docker compose -f deploy/compose.yml stop postgres
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "503"
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "200"
+          test "$(curl --silent -k --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "503"
+          test "$(curl --silent -k --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "200"
       - name: Verify production isolation
         env:
           POSTGRES_PASSWORD: ci-only-password

@@ -8,12 +8,12 @@ services:
       Email__Smtp__FromAddress: null
       Email__Smtp__FromName: null
 
-  caddy:
+  web:
     ports: !override
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile.production:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/nginx/certs:ro
 
   mailpit:
     profiles: ["development-only"]
