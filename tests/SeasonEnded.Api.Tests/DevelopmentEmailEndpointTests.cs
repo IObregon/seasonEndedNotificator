@@ -61,8 +61,19 @@ public sealed class DevelopmentEmailEndpointTests
                 builder.UseSetting("BootstrapAdmin:Email", "");
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("email-test"));
+                    RemoveDbContextRegistrations(services);
+                    services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase($"email-test-{Guid.NewGuid()}"));
                     services.AddSingleton(sender);
                 });
             });
+
+    private static void RemoveDbContextRegistrations(IServiceCollection services)
+    {
+        for (var i = services.Count - 1; i >= 0; i--)
+        {
+            if (services[i].ServiceType == typeof(DbContextOptions<AppDbContext>) ||
+                services[i].ServiceType == typeof(DbContextOptions))
+                services.RemoveAt(i);
+        }
+    }
 }

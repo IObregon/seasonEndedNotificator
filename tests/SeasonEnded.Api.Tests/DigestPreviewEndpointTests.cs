@@ -115,6 +115,16 @@ public sealed class DigestPreviewEndpointTests
         Assert.Equal("[PREVIEW] Seasons Ended", sender.SentMessage.Subject);
     }
 
+    private static void RemoveDbContextRegistrations(IServiceCollection services)
+    {
+        for (var i = services.Count - 1; i >= 0; i--)
+        {
+            if (services[i].ServiceType == typeof(DbContextOptions<AppDbContext>) ||
+                services[i].ServiceType == typeof(DbContextOptions))
+                services.RemoveAt(i);
+        }
+    }
+
     private static WebApplicationFactory<Program> CreateApplication(
         string environment, IEmailSender sender)
     {
@@ -132,6 +142,7 @@ public sealed class DigestPreviewEndpointTests
                 builder.UseSetting("BootstrapAdmin:Email", "admin@localhost");
                 builder.ConfigureTestServices(services =>
                 {
+                    RemoveDbContextRegistrations(services);
                     services.AddDbContext<AppDbContext>(options =>
                         options.UseInMemoryDatabase(dbName)
                             .UseInternalServiceProvider(internalProvider));

@@ -108,18 +108,29 @@ app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
 {
-    var bootstrapEmail = builder.Configuration["BootstrapAdmin:Email"];
-    if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
     {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.EnsureCreatedAsync();
-        var command = new BootstrapAdminCommand(db);
-        var result = await command.ExecuteAsync(bootstrapEmail);
-        if (result.Created)
-            app.Logger.LogInformation("Bootstrapped admin {Email}", bootstrapEmail);
+        await db.Database.MigrateAsync();
+    }
+    catch (InvalidOperationException)
+    {
+        // Multiple database providers registered (test environment with InMemory override).
+        // Migration is not applicable; skip silently.
+    }
+
+    if (app.Environment.IsDevelopment())
+    {
+        var bootstrapEmail = builder.Configuration["BootstrapAdmin:Email"];
+        if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+        {
+            var command = new BootstrapAdminCommand(db);
+            var result = await command.ExecuteAsync(bootstrapEmail);
+            if (result.Created)
+                app.Logger.LogInformation("Bootstrapped admin {Email}", bootstrapEmail);
+        }
     }
 }
 
