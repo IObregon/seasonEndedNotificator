@@ -139,10 +139,6 @@ public sealed class SendDigestCommand(AppDbContext context, IEmailSender emailSe
         DateTimeOffset? nextAttemptAt,
         CancellationToken cancellationToken)
     {
-        var tracked = context.DigestDeliveries.Local.FirstOrDefault(d => d.Id == deliveryId);
-        if (tracked is not null)
-            context.Entry(tracked).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
-
         var delivery = await context.DigestDeliveries.FindAsync([deliveryId], cancellationToken);
         if (delivery is not null)
         {
