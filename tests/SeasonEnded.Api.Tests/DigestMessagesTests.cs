@@ -37,7 +37,7 @@ public sealed class DigestMessagesTests
         Assert.Equal("Temporadas finalizadas", message.Subject);
         Assert.Contains("The Wire", message.TextBody);
         Assert.Contains("Temporada 5", message.TextBody);
-        Assert.Contains("finalizo", message.TextBody);
+        Assert.Contains("finalizó", message.TextBody);
     }
 
     [Fact]
@@ -79,5 +79,19 @@ public sealed class DigestMessagesTests
 
         var message = DigestMessages.Create("en", "user@example.test", items);
         Assert.Contains("unknown", message.TextBody);
+    }
+
+    [Fact]
+    public void Html_body_encodes_show_title()
+    {
+        var items = new List<DigestCandidate>
+        {
+            new(Guid.NewGuid(), "<script>alert(1)</script>", 1, new DateOnly(2024, 1, 1), Guid.NewGuid(), DateTimeOffset.UtcNow, 1)
+        };
+
+        var message = DigestMessages.Create("en", "user@example.test", items);
+
+        Assert.DoesNotContain("<script>", message.HtmlBody);
+        Assert.Contains("&lt;script&gt;", message.HtmlBody);
     }
 }

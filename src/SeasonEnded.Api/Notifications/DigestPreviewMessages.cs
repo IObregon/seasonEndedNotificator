@@ -32,5 +32,5 @@ public static class DigestPreviewMessages
         "- Breaking Bad, Season 5 (ended 2013-09-29) - /shows/169/seasons/5\n- The Wire, Season 5 (ended 2008-03-09) - /shows/179/seasons/5";
 
     private const string SampleItemsEs =
-        "- Breaking Bad, Temporada 5 (finalizo 2013-09-29) - /shows/169/seasons/5\n- The Wire, Temporada 5 (finalizo 2008-03-09) - /shows/179/seasons/5";
+        "- Breaking Bad, Temporada 5 (finalizó 2013-09-29) - /shows/169/seasons/5\n- The Wire, Temporada 5 (finalizó 2008-03-09) - /shows/179/seasons/5";
 }

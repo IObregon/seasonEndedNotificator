@@ -33,7 +33,7 @@ public sealed class TelegramDigestMessagesTests
 
         Assert.Contains("*Temporadas finalizadas*", text);
         Assert.Contains("Temporada 5", text);
-        Assert.Contains("finalizo", text);
+        Assert.Contains("finalizó", text);
     }
 
     [Fact]

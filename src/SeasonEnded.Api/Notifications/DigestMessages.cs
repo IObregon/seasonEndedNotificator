@@ -14,7 +14,7 @@ public static class DigestMessages
         var textItems = string.Join("\n", items.Select(i =>
             $"- {i.ShowTitle}, Season {i.SeasonNumber} (ended {FormatDate(i.EndDate)}) - /shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}"));
         var htmlItems = string.Join("", items.Select(i =>
-            $"<li>{i.ShowTitle}, Season {i.SeasonNumber} (ended {FormatDate(i.EndDate)}) &mdash; <a href=\"/shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}\">view</a></li>"));
+            $"<li>{System.Net.WebUtility.HtmlEncode(i.ShowTitle)}, Season {i.SeasonNumber} (ended {FormatDate(i.EndDate)}) &mdash; <a href=\"/shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}\">view</a></li>"));
 
         return new EmailMessage(
             recipient,
@@ -26,9 +26,9 @@ public static class DigestMessages
     private static EmailMessage BuildSpanish(string recipient, List<DigestCandidate> items)
     {
         var textItems = string.Join("\n", items.Select(i =>
-            $"- {i.ShowTitle}, Temporada {i.SeasonNumber} (finalizo {FormatDate(i.EndDate)}) - /shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}"));
+            $"- {i.ShowTitle}, Temporada {i.SeasonNumber} (finalizó {FormatDate(i.EndDate)}) - /shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}"));
         var htmlItems = string.Join("", items.Select(i =>
-            $"<li>{i.ShowTitle}, Temporada {i.SeasonNumber} (finalizo {FormatDate(i.EndDate)}) &mdash; <a href=\"/shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}\">ver</a></li>"));
+            $"<li>{System.Net.WebUtility.HtmlEncode(i.ShowTitle)}, Temporada {i.SeasonNumber} (finalizó {FormatDate(i.EndDate)}) &mdash; <a href=\"/shows/{i.ShowProviderId}/seasons/{i.SeasonNumber}\">ver</a></li>"));
 
         return new EmailMessage(
             recipient,

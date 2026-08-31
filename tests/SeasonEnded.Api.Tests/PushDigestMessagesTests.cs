@@ -46,4 +46,19 @@ public sealed class PushDigestMessagesTests
         Assert.Contains("Temporada 5", payload);
         Assert.Contains("finalizado", payload);
     }
+
+    [Fact]
+    public void Payload_escapes_quotes_in_show_title()
+    {
+        var items = new List<DigestCandidate>
+        {
+            new(Guid.NewGuid(), "Show \"Quoted\"", 1, null, Guid.NewGuid(), DateTimeOffset.UtcNow, 1)
+        };
+
+        var payload = PushDigestMessages.Create("en", items);
+
+        Assert.DoesNotContain("\"Quoted\"", payload);
+        Assert.Contains("Quoted", payload);
+        Assert.DoesNotContain($"\"body\":\"Show \"", payload);
+    }
 }
