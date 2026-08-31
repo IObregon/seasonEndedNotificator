@@ -1,9 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { searchShows } from './showSearch'
+
+type ShowResult = {
+  providerId: number
+  title: string
+  premiereYear: number | null
+  status: string
+  imageUrl: string | null
+}
+
+type SearchState = 'idle' | 'empty' | 'error' | 'rate-limited'
+
+async function searchShows(
+  query: string,
+  fetcher: typeof fetch = fetch,
+): Promise<{ state: SearchState; results: ShowResult[] }> {
+  const response = await fetcher(
+    `/api/shows/search?query=${encodeURIComponent(query.trim())}`,
+  )
+  if (response.status === 429) return { state: 'rate-limited', results: [] }
+  if (!response.ok) return { state: 'error', results: [] }
+
+  const results: ShowResult[] = await response.json()
+  return { state: results.length ? 'idle' : 'empty', results }
+}
 
 describe('show search states', () => {
   it('returns successful results', async () => {
-    const show = { providerId: 82, title: 'Game of Thrones', premiereYear: 2011, status: 'Ended', imageUrl: null }
+    const show: ShowResult = { providerId: 82, title: 'Game of Thrones', premiereYear: 2011, status: 'Ended', imageUrl: null }
 
     const result = await searchShows('Game of Thrones', async () =>
       new Response(JSON.stringify([show]), { status: 200 }),

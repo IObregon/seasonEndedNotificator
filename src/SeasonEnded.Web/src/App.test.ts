@@ -7,6 +7,6 @@ describe('App', () => {
   it('shows loading state while checking auth', async () => {
     const html = await renderToString(createSSRApp(App))
 
-    expect(html).toContain('Loading')
+    expect(html).toContain('skeleton')
   })
 })

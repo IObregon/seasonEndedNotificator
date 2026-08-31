@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { searchShows, type SearchState, type ShowResult } from '../showSearch'
+import { api, type SearchState, type ShowResult } from '../api'
 
 const props = defineProps<{ selectedProviderId: number | null }>()
 const emit = defineEmits<{ select: [providerId: number] }>()
@@ -13,7 +13,7 @@ async function search() {
   if (!query.value.trim()) return
   state.value = 'loading'
 
-  const searchResult = await searchShows(query.value)
+  const searchResult = await api.searchShows(query.value)
   results.value = searchResult.results
   state.value = searchResult.state
 }
@@ -34,7 +34,9 @@ function select(providerId: number) {
       </div>
     </form>
 
-    <p v-if="state === 'loading'" class="search-status">Searching…</p>
+    <div v-if="state === 'loading'" class="search-skeleton" aria-hidden="true">
+      <div class="skeleton skeleton-result" v-for="i in 3" :key="i"></div>
+    </div>
     <p v-if="state === 'empty'" class="search-status">No shows found.</p>
     <p v-if="state === 'rate-limited'" class="search-status">Too many searches. Try again shortly.</p>
     <p v-if="state === 'error'" class="search-status">Search is unavailable. Try again.</p>

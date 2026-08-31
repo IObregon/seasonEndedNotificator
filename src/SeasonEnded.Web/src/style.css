@@ -11,9 +11,6 @@
   --danger: #e55b5b;
   --radius: 0.5rem;
   --radius-sm: 0.3rem;
-}
-
-:root {
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   color: var(--text);
   font-synthesis: none;
@@ -457,4 +454,148 @@ h1 {
 .login-error {
   color: var(--danger);
   margin-top: 1rem;
+}
+
+/* ── Skeleton loaders ── */
+
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton-title {
+  height: 4rem;
+  width: 60%;
+}
+
+.skeleton-line {
+  height: 1.2rem;
+  width: 100%;
+}
+
+.skeleton-line.short {
+  width: 40%;
+}
+
+.search-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.skeleton-result {
+  height: 4.3rem;
+  width: 100%;
+}
+
+/* ── Follows error ── */
+
+.follows-error {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+/* ── Telegram / Push sections ── */
+
+.telegram-section,
+.push-section {
+  margin-top: 1.5rem;
+}
+
+.telegram-section h3,
+.push-section h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 0.6rem;
+}
+
+.status-connected {
+  color: var(--accent-dim);
+  margin: 0 0 0.5rem;
+}
+
+.connect-btn,
+.disconnect-btn {
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.connect-btn {
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.disconnect-btn {
+  color: var(--text);
+  background: var(--border-light);
+  border: 1px solid var(--border-light);
+}
+
+.telegram-link {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.telegram-link a {
+  color: var(--accent);
+}
+
+.push-empty,
+.push-list {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.push-list {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+
+.push-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.push-list li:last-child {
+  border-bottom: 0;
+}
+
+.push-list button {
+  border: 0;
+  background: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.settings-error {
+  color: var(--danger);
+  margin-top: 1rem;
+  font-size: 0.85rem;
 }

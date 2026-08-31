@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { api } from '../api'
 
 const email = ref('')
 const token = ref('')
@@ -7,7 +8,6 @@ const message = ref('')
 const error = ref(false)
 const loading = ref(false)
 const tokenMode = ref(false)
-const authenticated = ref(false)
 
 const emit = defineEmits<{ authenticated: [] }>()
 
@@ -27,19 +27,14 @@ async function requestLink() {
   error.value = false
   message.value = ''
 
-  const response = await fetch('/api/auth/magic-link', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email.value }),
-  })
-
-  loading.value = false
-  if (response.ok) {
-    const data = await response.json()
+  try {
+    const data = await api.requestMagicLink(email.value)
     message.value = data.message
     tokenMode.value = true
-  } else {
+  } catch {
     error.value = true
+  } finally {
+    loading.value = false
   }
 }
 
@@ -49,25 +44,20 @@ async function consumeToken() {
   error.value = false
   message.value = ''
 
-  const response = await fetch('/api/auth/magic-link/consume', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: token.value }),
-  })
-
-  loading.value = false
-  if (response.ok) {
+  try {
+    await api.consumeToken(token.value)
     token.value = ''
     message.value = ''
     tokenMode.value = false
     const params = new URLSearchParams(window.location.search)
     params.delete('token')
     window.history.replaceState({}, '', `${window.location.pathname}?${params}`)
-    authenticated.value = true
     emit('authenticated')
-  } else {
+  } catch {
     error.value = true
     message.value = 'Token is invalid, expired, or already used.'
+  } finally {
+    loading.value = false
   }
 }
 </script>

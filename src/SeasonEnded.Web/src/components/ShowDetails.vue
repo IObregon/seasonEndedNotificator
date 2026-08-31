@@ -1,21 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { api, type ShowDetailsData } from '../api'
 
-const props = defineProps<{
-  show: {
-    providerId: number
-    title: string
-    premiereYear: number | null
-    status: string
-    seasons: Array<{
-      number: number
-      premiereDate: string | null
-      endDate: string | null
-      completedAt: string | null
-    }>
-  }
-}>()
-
+const props = defineProps<{ show: ShowDetailsData }>()
 const emit = defineEmits<{ close: [], followed: [] }>()
 const followed = ref(false)
 
@@ -24,9 +11,13 @@ watch(() => props.show.providerId, () => {
 }, { immediate: true })
 
 async function follow() {
-  const response = await fetch(`/api/shows/${props.show.providerId}/follow`, { method: 'POST' })
-  followed.value = response.ok
-  if (response.ok) emit('followed')
+  followed.value = true
+  emit('followed')
+  try {
+    await api.followShow(props.show.providerId)
+  } catch {
+    followed.value = false
+  }
 }
 </script>
 

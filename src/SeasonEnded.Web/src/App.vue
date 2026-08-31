@@ -4,43 +4,25 @@ import ShowSearch from './components/ShowSearch.vue'
 import ShowDetails from './components/ShowDetails.vue'
 import NotificationSettings from './components/NotificationSettings.vue'
 import LoginView from './components/LoginView.vue'
-
-type ShowDetailsData = {
-  providerId: number
-  title: string
-  premiereYear: number | null
-  status: string
-  seasons: Array<{
-    number: number
-    premiereDate: string | null
-    endDate: string | null
-    completedAt: string | null
-  }>
-}
-
-type FollowedShowData = {
-  providerId: number
-  title: string
-  status: string
-}
+import { api, type ShowDetailsData, type FollowedShowData } from './api'
 
 const selectedShow = ref<ShowDetailsData | null>(null)
 const detailsError = ref(false)
 const followedShows = ref<FollowedShowData[]>([])
+const followsError = ref(false)
 const authChecking = ref(true)
 const authenticated = ref(false)
 
 onMounted(async () => {
-  const meResponse = await fetch('/api/auth/me')
-  if (meResponse.ok) {
+  const me = await api.getMe()
+  if (me) {
     authenticated.value = true
     authChecking.value = false
     await loadFollows()
     return
   }
 
-  const autoLoginResponse = await fetch('/api/dev/auto-login', { method: 'POST' })
-  if (autoLoginResponse.ok) {
+  if (await api.autoLogin()) {
     authenticated.value = true
     authChecking.value = false
     await loadFollows()
@@ -61,34 +43,37 @@ function closeDetails() {
 }
 
 async function loadDetails(providerId: number) {
-  const response = await fetch(`/api/shows/${providerId}`)
-  if (!response.ok) {
+  try {
+    detailsError.value = false
+    selectedShow.value = await api.getShowDetails(providerId)
+
+    await nextTick()
+    document.getElementById('show-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch {
     detailsError.value = true
     selectedShow.value = null
-    return
   }
-
-  detailsError.value = false
-  selectedShow.value = await response.json()
-
-  await nextTick()
-  document.getElementById('show-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function loadFollows() {
-  const response = await fetch('/api/follows')
-  if (!response.ok) {
+  followsError.value = false
+  try {
+    followedShows.value = await api.getFollows()
+  } catch {
     followedShows.value = []
-    return
+    followsError.value = true
   }
-
-  followedShows.value = await response.json()
 }
 
 async function unfollow(providerId: number) {
-  const response = await fetch(`/api/shows/${providerId}/follow`, { method: 'DELETE' })
-  if (response.ok) {
-    followedShows.value = followedShows.value.filter(show => show.providerId !== providerId)
+  const show = followedShows.value.find(s => s.providerId === providerId)
+  if (!show) return
+
+  followedShows.value = followedShows.value.filter(s => s.providerId !== providerId)
+  try {
+    await api.unfollowShow(providerId)
+  } catch {
+    followedShows.value = [...followedShows.value, show]
   }
 }
 
@@ -99,9 +84,11 @@ async function nextTick() {
 
 <template>
   <main class="shell">
-    <template v-if="authChecking">
-      <p>Loading…</p>
-    </template>
+    <div v-if="authChecking" class="skeleton-loader" aria-label="Loading">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line short"></div>
+    </div>
     <template v-else-if="!authenticated">
       <LoginView @authenticated="onAuthenticated" />
     </template>
@@ -131,7 +118,8 @@ async function nextTick() {
               <h2>Followed shows</h2>
               <button type="button" @click="loadFollows">Refresh</button>
             </div>
-            <p v-if="!followedShows.length">No followed shows yet.</p>
+            <p v-if="followsError" class="follows-error">Could not load followed shows.</p>
+            <p v-else-if="!followedShows.length">No followed shows yet.</p>
             <ul v-else>
               <li v-for="show in followedShows" :key="show.providerId">
                 <span>{{ show.title }} · {{ show.status }}</span>
