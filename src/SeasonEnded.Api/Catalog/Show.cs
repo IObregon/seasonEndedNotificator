@@ -20,8 +20,8 @@ public sealed class Season
     public Show Show { get; set; } = null!;
     public int ProviderSeasonId { get; init; }
     public int Number { get; init; }
-    public DateOnly? PremiereDate { get; init; }
-    public DateOnly? EndDate { get; init; }
+    public DateOnly? PremiereDate { get; set; }
+    public DateOnly? EndDate { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
     public UncertaintyReason? UncertaintyReason { get; set; }
     public DateTimeOffset? FinaleAirStart { get; set; }

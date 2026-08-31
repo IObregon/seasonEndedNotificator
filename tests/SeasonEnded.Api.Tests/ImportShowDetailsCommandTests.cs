@@ -47,6 +47,38 @@ public sealed class ImportShowDetailsCommandTests
         Assert.Equal("Running", existing.Status);
     }
 
+    [Fact]
+    public async Task Refresh_preserves_completion_data_for_existing_season()
+    {
+        await using var context = CreateContext();
+        var existing = new Show
+        {
+            ProviderId = 82,
+            Title = "Old title",
+            Status = "Running"
+        };
+        var completedAt = new DateTimeOffset(2024, 1, 15, 0, 0, 0, TimeSpan.Zero);
+        existing.Seasons.Add(new Season
+        {
+            ProviderSeasonId = 8,
+            Number = 8,
+            CompletedAt = completedAt
+        });
+        context.Shows.Add(existing);
+        await context.SaveChangesAsync();
+
+        var provider = new StubDetails(new ImportedShow(
+            82, "Game of Thrones", 2011, "Ended", "show.jpg",
+            [new ImportedSeason(8, 8, new DateOnly(2019, 4, 14), new DateOnly(2019, 5, 19))]));
+
+        var result = await new ImportShowDetailsCommand(context, provider)
+            .ExecuteAsync(82, CancellationToken.None);
+
+        Assert.Single(result.Seasons);
+        Assert.Equal(completedAt, result.Seasons.First().CompletedAt);
+        Assert.Equal(new DateOnly(2019, 4, 14), result.Seasons.First().PremiereDate);
+    }
+
     private static AppDbContext CreateContext() => new(
         new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

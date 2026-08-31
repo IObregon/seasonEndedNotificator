@@ -13,8 +13,13 @@ public sealed class ImportShowDetailsCommand(
     {
         var imported = await provider.GetAsync(providerId, cancellationToken);
         var show = await context.Shows
-            .Include(item => item.Seasons)
             .FirstOrDefaultAsync(item => item.ProviderId == providerId, cancellationToken);
+
+        var existingSeasons = show is null
+            ? new List<Season>()
+            : await context.Seasons
+                .Where(s => s.ShowId == show.Id)
+                .ToListAsync(cancellationToken);
 
         if (show is null)
         {
@@ -26,18 +31,40 @@ public sealed class ImportShowDetailsCommand(
         show.PremiereYear = imported.PremiereYear;
         show.Status = imported.Status;
         show.ImageUrl = imported.ImageUrl;
-        show.Seasons.Clear();
-        var newSeasons = imported.Seasons.Select(season => new Season
+
+        var existingByProviderId = existingSeasons.ToDictionary(s => s.ProviderSeasonId);
+        var importedIds = imported.Seasons.Select(s => s.ProviderSeasonId).ToHashSet();
+
+        foreach (var existing in existingSeasons)
         {
-            Show = show,
-            ProviderSeasonId = season.ProviderSeasonId,
-            Number = season.Number,
-            PremiereDate = season.PremiereDate,
-            EndDate = season.EndDate
-        }).ToList();
-        context.Seasons.AddRange(newSeasons);
+            if (!importedIds.Contains(existing.ProviderSeasonId))
+                context.Remove(existing);
+        }
+
+        foreach (var importedSeason in imported.Seasons)
+        {
+            if (existingByProviderId.TryGetValue(importedSeason.ProviderSeasonId, out var season))
+            {
+                season.PremiereDate = importedSeason.PremiereDate;
+                season.EndDate = importedSeason.EndDate;
+            }
+            else
+            {
+                context.Seasons.Add(new Season
+                {
+                    ShowId = show.Id,
+                    ProviderSeasonId = importedSeason.ProviderSeasonId,
+                    Number = importedSeason.Number,
+                    PremiereDate = importedSeason.PremiereDate,
+                    EndDate = importedSeason.EndDate
+                });
+            }
+        }
 
         await context.SaveChangesAsync(cancellationToken);
-        return show;
+
+        return await context.Shows
+            .Include(s => s.Seasons)
+            .FirstAsync(s => s.Id == show.Id, cancellationToken);
     }
 }
