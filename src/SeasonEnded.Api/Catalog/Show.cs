@@ -11,6 +11,14 @@ public sealed class Show
     public string Status { get; set; } = "";
     public string? ImageUrl { get; set; }
     public List<Season> Seasons { get; } = [];
+
+    public void UpdateMetadata(string title, int? premiereYear, string status, string? imageUrl)
+    {
+        Title = title;
+        PremiereYear = premiereYear;
+        Status = status;
+        ImageUrl = imageUrl;
+    }
 }
 
 public sealed class Season
@@ -26,4 +34,28 @@ public sealed class Season
     public UncertaintyReason? UncertaintyReason { get; set; }
     public DateTimeOffset? FinaleAirStart { get; set; }
     public int? FinaleRuntimeMinutes { get; set; }
+
+    public void UpdateSchedule(DateOnly? premiereDate, DateOnly? endDate)
+    {
+        PremiereDate = premiereDate;
+        EndDate = endDate;
+    }
+
+    public void MarkCompleted(DateTimeOffset completedAt)
+    {
+        UncertaintyReason = null;
+        CompletedAt = completedAt;
+    }
+
+    public void RecordUncertainty(UncertaintyReason? reason)
+    {
+        UncertaintyReason = reason;
+    }
+
+    public void RefreshFinaleSchedule(DateTimeOffset airStart, int? runtimeMinutes, UncertaintyReason? uncertainty)
+    {
+        FinaleAirStart = airStart;
+        FinaleRuntimeMinutes = runtimeMinutes;
+        UncertaintyReason = uncertainty;
+    }
 }

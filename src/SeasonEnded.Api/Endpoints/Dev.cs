@@ -153,8 +153,7 @@ public static class DevEndpoints
             }
 
             var completedAt = DateTimeOffset.UtcNow;
-            season.CompletedAt = completedAt;
-            season.UncertaintyReason = null;
+            season.MarkCompleted(completedAt);
 
             db.SeasonCompletionEvents.Add(new SeasonCompletionEvent
             {

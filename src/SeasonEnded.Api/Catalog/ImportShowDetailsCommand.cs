@@ -27,10 +27,7 @@ public sealed class ImportShowDetailsCommand(
             context.Shows.Add(show);
         }
 
-        show.Title = imported.Title;
-        show.PremiereYear = imported.PremiereYear;
-        show.Status = imported.Status;
-        show.ImageUrl = imported.ImageUrl;
+        show.UpdateMetadata(imported.Title, imported.PremiereYear, imported.Status, imported.ImageUrl);
 
         var existingByProviderId = existingSeasons.ToDictionary(s => s.ProviderSeasonId);
         var importedIds = imported.Seasons.Select(s => s.ProviderSeasonId).ToHashSet();
@@ -45,8 +42,7 @@ public sealed class ImportShowDetailsCommand(
         {
             if (existingByProviderId.TryGetValue(importedSeason.ProviderSeasonId, out var season))
             {
-                season.PremiereDate = importedSeason.PremiereDate;
-                season.EndDate = importedSeason.EndDate;
+                season.UpdateSchedule(importedSeason.PremiereDate, importedSeason.EndDate);
             }
             else
             {

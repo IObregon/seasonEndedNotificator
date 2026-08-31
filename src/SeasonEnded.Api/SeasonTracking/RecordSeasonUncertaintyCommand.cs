@@ -10,7 +10,7 @@ public sealed class RecordSeasonUncertaintyCommand(AppDbContext context)
         if (season is null || season.CompletedAt is not null)
             return;
 
-        season.UncertaintyReason = SeasonUncertaintyPolicy.Assess(evidence);
+        season.RecordUncertainty(SeasonUncertaintyPolicy.Assess(evidence));
         await context.SaveChangesAsync();
     }
 }

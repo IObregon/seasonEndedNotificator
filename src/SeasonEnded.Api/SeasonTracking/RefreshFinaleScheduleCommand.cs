@@ -19,9 +19,7 @@ public sealed class RefreshFinaleScheduleCommand(
         var refreshed = await provider.GetAsync(season.ProviderSeasonId, cancellationToken);
         var uncertainty = SeasonUncertaintyPolicy.Assess(refreshed.Assessment);
 
-        season.FinaleAirStart = refreshed.AirStart;
-        season.FinaleRuntimeMinutes = refreshed.RuntimeMinutes;
-        season.UncertaintyReason = uncertainty;
+        season.RefreshFinaleSchedule(refreshed.AirStart, refreshed.RuntimeMinutes, uncertainty);
 
         if (uncertainty is not null)
         {
