@@ -37,18 +37,17 @@ jobs:
         env:
           POSTGRES_PASSWORD: ci-only-password
         run: docker compose -f deploy/compose.yml up --build --wait
-      - name: Verify HTTPS routes
+      - name: Verify routes
         run: |
-          curl --fail -k --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/
-          test "$(curl --fail -k --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "Healthy"
-          test "$(curl --fail -k --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "Healthy"
+          curl --fail http://localhost:8080/
+          test "$(curl --fail http://localhost:8080/health/live)" = "Healthy"
+          test "$(curl --fail http://localhost:8080/health/ready)" = "Healthy"
       - name: Verify local email capture
         run: |
-          curl --fail -k \
-            --resolve season-ended.localhost:443:127.0.0.1 \
+          curl --fail \
             --header "Content-Type: application/json" \
             --data '{"recipient":"viewer@example.test"}' \
-            https://season-ended.localhost/api/dev/email-test
+            http://localhost:8080/api/dev/email-test
           message_id="$(curl --fail --silent http://localhost:8025/api/v1/messages | jq --raw-output '.messages[0].ID')"
           message="$(curl --fail --silent "http://localhost:8025/api/v1/message/${message_id}")"
           test "$(jq --raw-output '.To[0].Address' <<< "$message")" = "viewer@example.test"
@@ -60,8 +59,8 @@ jobs:
           POSTGRES_PASSWORD: ci-only-password
         run: |
           docker compose -f deploy/compose.yml stop postgres
-          test "$(curl --silent -k --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/ready)" = "503"
-          test "$(curl --silent -k --output /dev/null --write-out '%{http_code}' --resolve season-ended.localhost:443:127.0.0.1 https://season-ended.localhost/health/live)" = "200"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8080/health/ready)" = "503"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8080/health/live)" = "200"
       - name: Verify production isolation
         env:
           POSTGRES_PASSWORD: ci-only-password
@@ -85,15 +84,6 @@ jobs:
     needs: [test, compose-smoke]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - image: seasonended-api
-            context: .
-            dockerfile: src/SeasonEnded.Api/Dockerfile
-          - image: seasonended-web
-            context: .
-            dockerfile: src/SeasonEnded.Web/Dockerfile
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -105,12 +95,12 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          context: .
+          file: src/SeasonEnded.Api/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/seasonended-api:latest
+            ghcr.io/${{ github.repository_owner }}/seasonended-api:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

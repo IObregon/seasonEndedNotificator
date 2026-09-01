@@ -16,6 +16,9 @@ services:
 
   api:
     image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER}/seasonended-api:${IMAGE_TAG:-latest}
+    ports:
+      - "80:8080"
+      - "443:8080"
     environment:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
@@ -36,23 +39,6 @@ services:
       timeout: 3s
       retries: 10
       start_period: 30s
-    restart: unless-stopped
-
-  web:
-    image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER}/seasonended-web:${IMAGE_TAG:-latest}
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./certs:/etc/nginx/certs:ro
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health | grep -q Healthy"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
     restart: unless-stopped
 
 volumes:

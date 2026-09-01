@@ -16,10 +16,6 @@ cd seasonEndedNotificator
 # Create .env from example
 cp .env.example .env
 # Edit .env with production values
-
-# Create cert directory for nginx TLS
-mkdir -p deploy/certs
-# Place cert.pem and key.pem (or use Let's Encrypt/Certbot)
 ```
 
 ## GitHub Repository Secrets
@@ -49,8 +45,8 @@ Set these under Settings → Secrets and variables → Actions:
 1. **Push to `main`** triggers CI
 2. `test` job — .NET tests + Vue tests + Vue build
 3. `compose-smoke` job — full stack integration test
-4. `build-and-push` job — builds API + Web images, pushes to GHCR with `latest` + commit SHA tags
-5. `deploy` job — SSHes to VPS, pulls images, restarts containers
+4. `build-and-push` job — builds single API image (includes Vue SPA), pushes to GHCR with `latest` + commit SHA tags
+5. `deploy` job — SSHes to VPS, pulls image, restarts containers
 
 ## Manual Deployment
 

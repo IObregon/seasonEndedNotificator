@@ -8,12 +8,5 @@ services:
       Email__Smtp__FromAddress: null
       Email__Smtp__FromName: null
 
-  web:
-    ports: !override
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./certs:/etc/nginx/certs:ro
-
   mailpit:
     profiles: ["development-only"]

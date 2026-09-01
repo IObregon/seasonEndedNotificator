@@ -20,6 +20,8 @@ services:
     build:
       context: ..
       dockerfile: src/SeasonEnded.Api/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
     environment:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Development
@@ -52,25 +54,6 @@ services:
       - "127.0.0.1:8025:8025"
     healthcheck:
       test: ["CMD", "/mailpit", "readyz"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    restart: unless-stopped
-
-  web:
-    build:
-      context: ..
-      dockerfile: src/SeasonEnded.Web/Dockerfile
-    ports:
-      - "127.0.0.1:80:80"
-      - "127.0.0.1:443:443"
-    extra_hosts:
-      - "${APP_DOMAIN:-season-ended.localhost}:127.0.0.1"
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health | grep -q Healthy"]
       interval: 5s
       timeout: 3s
       retries: 10

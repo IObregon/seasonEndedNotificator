@@ -148,6 +148,7 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 app.UseForwardedHeaders();
+app.UseStaticFiles();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -225,6 +226,13 @@ app.MapInvitationEndpoints();
 if (app.Environment.IsDevelopment())
     app.MapDevEndpoints();
 
+app.MapFallback(context =>
+{
+    if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/health"))
+        return Results.NotFound().ExecuteAsync(context);
+
+    return Results.File("index.html", "text/html").ExecuteAsync(context);
+});
 app.Run();
 
 public partial class Program;
