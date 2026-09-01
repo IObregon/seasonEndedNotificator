@@ -60,7 +60,8 @@ public static class NotificationEndpoints
                 return Results.BadRequest();
 
             var secret = configuration["Telegram:WebhookSecret"] ?? "";
-            if (string.IsNullOrEmpty(secret) || request.Secret != secret)
+            var headerSecret = httpContext.Request.Headers["X-Telegram-Bot-Api-Secret-Token"].ToString();
+            if (string.IsNullOrEmpty(secret) || headerSecret != secret)
                 return Results.Unauthorized();
 
             if (request.Message?.Text is not string text)
