@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 namespace SeasonEnded.Api.Notifications;
 
 public sealed class TelegramOptions
@@ -8,7 +10,7 @@ public sealed class TelegramOptions
     public string WebhookSecret { get; init; } = "";
 }
 
-public sealed class TelegramBotSender(IHttpClientFactory httpClientFactory, TelegramOptions options) : ITelegramSender
+public sealed class TelegramBotSender(IHttpClientFactory httpClientFactory, IOptions<TelegramOptions> options) : ITelegramSender
 {
     public async Task<int> SendAsync(long chatId, string text, CancellationToken cancellationToken = default)
     {
@@ -21,7 +23,7 @@ public sealed class TelegramBotSender(IHttpClientFactory httpClientFactory, Tele
         };
 
         var response = await http.PostAsJsonAsync(
-            $"/bot{options.BotToken}/sendMessage", payload, cancellationToken);
+            $"/bot{options.Value.BotToken}/sendMessage", payload, cancellationToken);
         return response.IsSuccessStatusCode ? 1 : 0;
     }
 }
