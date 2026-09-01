@@ -111,6 +111,16 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      - name: Copy compose file to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "deploy/compose.vps.yml"
+          target: ${{ secrets.VPS_DEPLOY_PATH }}
+          strip_components: 1
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -132,6 +142,6 @@ jobs:
             export PUSH_PRIVATE_KEY=${{ secrets.PUSH_PRIVATE_KEY }}
             export PUSH_SUBJECT=${{ secrets.PUSH_SUBJECT }}
             echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            docker compose -f deploy/compose.vps.yml pull
-            docker compose -f deploy/compose.vps.yml up -d --wait
+            docker compose -f compose.vps.yml pull
+            docker compose -f compose.vps.yml up -d --wait
             docker image prune -f

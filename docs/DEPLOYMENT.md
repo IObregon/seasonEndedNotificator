@@ -1,70 +1,129 @@
 # VPS Deployment
 
-## Prerequisites on VPS
+## How it works
+
+GitHub Actions builds the Docker image, pushes it to GitHub Container
+Registry (GHCR), then SSHes to your VPS to pull the image and restart
+the container. The only file the VPS needs is `compose.vps.yml` —
+the CI pipeline copies it automatically on each deploy.
+
+**You do NOT need to clone the repo on the VPS.**
+
+## One-Time VPS Setup
 
 ```bash
-# Install Docker + Docker Compose
+# 1. Install Docker
 curl -fsSL https://get.docker.com | sh
 
-# Authenticate to GHCR
-echo "<GITHUB_PAT>" | docker login ghcr.io -u <github-username> --password-stdin
+# 2. Create deploy user (or use existing user with docker access)
+sudo useradd -m -s /bin/bash deploy
+sudo usermod -aG docker deploy
 
-# Clone repo
-git clone https://github.com/<owner>/seasonEndedNotificator.git
-cd seasonEndedNotificator
+# 3. Create deploy directory
+sudo mkdir -p /opt/seasonended
+sudo chown deploy:deploy /opt/seasonended
 
-# Create .env from example
-cp .env.example .env
-# Edit .env with production values
+# 4. Authenticate to GHCR (for pulling private images)
+sudo -u deploy bash -c 'echo "YOUR_GHCR_PAT" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin'
 ```
 
-## GitHub Repository Secrets
+## GitHub Setup
 
-Set these under Settings → Secrets and variables → Actions:
+### 1. Create `production` environment
 
-| Secret | Description |
-|--------|-------------|
-| `VPS_HOST` | Server hostname or IP |
-| `VPS_USER` | SSH user with docker access |
-| `VPS_SSH_KEY` | Private SSH key |
-| `VPS_PORT` | SSH port (optional, default 22) |
-| `VPS_DEPLOY_PATH` | Absolute path to repo checkout on VPS |
-| `GHCR_PAT` | GitHub PAT with `read:packages` |
-| `POSTGRES_DB` | Database name |
-| `POSTGRES_USER` | Database user |
-| `POSTGRES_PASSWORD` | Database password |
-| `BOOTSTRAP_ADMIN_EMAIL` | Initial admin email (optional) |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token (optional) |
-| `TELEGRAM_BOT_USERNAME` | Telegram bot username (optional) |
-| `PUSH_PUBLIC_KEY` | VAPID public key (optional) |
-| `PUSH_PRIVATE_KEY` | VAPID private key (optional) |
-| `PUSH_SUBJECT` | VAPID subject, e.g. mailto: (optional) |
+Settings → Environments → New environment → name it `production`.
+
+### 2. Add repository secrets
+
+Settings → Secrets and variables → Actions → New repository secret.
+
+### Required secrets
+
+| Secret | How to get it |
+|--------|---------------|
+| `VPS_HOST` | Run `curl ifconfig.me` on VPS, or use your domain |
+| `VPS_USER` | `deploy` (from step 2 above) |
+| `VPS_SSH_KEY` | See "Generate SSH key" below |
+| `VPS_DEPLOY_PATH` | `/opt/seasonended` (from step 3 above) |
+| `GHCR_PAT` | See "Generate GitHub PAT" below |
+| `POSTGRES_DB` | Pick `seasonended` |
+| `POSTGRES_USER` | Pick `seasonended` |
+| `POSTGRES_PASSWORD` | Run `openssl rand -base64 24` locally |
+| `BOOTSTRAP_ADMIN_EMAIL` | Your email — initial admin account |
+
+### Optional secrets (leave empty to disable)
+
+| Secret | How to get it |
+|--------|---------------|
+| `VPS_PORT` | Only if SSH is not on port 22 |
+| `TELEGRAM_BOT_TOKEN` | Talk to @BotFather on Telegram → `/newbot` |
+| `TELEGRAM_BOT_USERNAME` | Bot username from BotFather |
+| `PUSH_PUBLIC_KEY` | Run `npx web-push generate-vapid-keys` |
+| `PUSH_PRIVATE_KEY` | Same command as above |
+| `PUSH_SUBJECT` | `mailto:your@email.com` |
+
+### Generate SSH key
+
+Run on your **local** machine (not VPS):
+
+```bash
+# Generate key (no passphrase — CI can't enter one)
+ssh-keygen -t ed25519 -f ~/.ssh/seasonended_deploy -C "github-actions-deploy" -N ""
+
+# Copy public key to VPS
+ssh-copy-id -i ~/.ssh/seasonended_deploy.pub deploy@YOUR_VPS_IP
+
+# Test it works
+ssh -i ~/.ssh/seasonended_deploy deploy@YOUR_VPS_IP "echo ok"
+
+# The SECRET value is the PRIVATE key — copy entire output:
+cat ~/.ssh/seasonended_deploy
+```
+
+Paste the full output (including `-----BEGIN...` and `-----END...` lines)
+as the `VPS_SSH_KEY` secret.
+
+### Generate GitHub PAT
+
+1. Go to https://github.com/settings/tokens
+2. Generate new token (classic)
+3. Select scope: `read:packages`
+4. Copy token → paste as `GHCR_PAT` secret
 
 ## Pipeline Flow
 
-1. **Push to `main`** triggers CI
-2. `test` job — .NET tests + Vue tests + Vue build
-3. `compose-smoke` job — full stack integration test
-4. `build-and-push` job — builds single API image (includes Vue SPA), pushes to GHCR with `latest` + commit SHA tags
-5. `deploy` job — SSHes to VPS, pulls image, restarts containers
+Every push to `main`:
 
-## Manual Deployment
+1. **test** — .NET tests + Vue tests + Vue build
+2. **compose-smoke** — integration test (HTTP smoke tests)
+3. **build-and-push** — build Docker image, push to GHCR with `latest` + commit SHA tags
+4. **deploy** — SCP `compose.vps.yml` to VPS, SSH in, `docker compose pull`, `docker compose up -d --wait`
+
+## Manual Operations
+
+### First deploy (or after setting up new VPS)
+
+Just push to `main`. CI handles everything.
+
+### Check running containers on VPS
 
 ```bash
-# On VPS:
-cd <VPS_DEPLOY_PATH>
-export GHCR_OWNER=<github-username>
-export IMAGE_TAG=<commit-sha-or-latest>
-# ... export other env vars ...
-docker compose -f deploy/compose.vps.yml pull
-docker compose -f deploy/compose.vps.yml up -d --wait
+ssh deploy@YOUR_VPS_IP
+cd /opt/seasonended
+docker compose -f compose.vps.yml ps
+docker compose -f compose.vps.yml logs --tail 50 api
 ```
 
-## Rollback
+### Rollback to previous version
 
 ```bash
-# Set IMAGE_TAG to previous commit SHA
-export IMAGE_TAG=<previous-sha>
-docker compose -f deploy/compose.vps.yml pull
-docker compose -f deploy/compose.vps.yml up -d --wait
+ssh deploy@YOUR_VPS_IP
+cd /opt/seasonended
+# Find previous image tag (commit SHA) at:
+# https://github.com/YOUR_USER/seasonEndedNotificator/pkgs/container/seasonended-api/versions
+export GHCR_OWNER=YOUR_GITHUB_USERNAME
+export IMAGE_TAG=PREVIOUS_COMMIT_SHA
+export POSTGRES_DB=... POSTGRES_USER=... POSTGRES_PASSWORD=...
+docker compose -f compose.vps.yml pull
+docker compose -f compose.vps.yml up -d --wait
 ```
