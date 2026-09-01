@@ -6,6 +6,7 @@ using System.Data;
 using System.Net.Mail;
 using System.Security.Claims;
 using SeasonEnded.Api.Identity;
+using SeasonEnded.Api.Notifications;
 
 namespace SeasonEnded.Api;
 
@@ -26,7 +27,9 @@ public static class AuthEndpoints
         app.MapPost("/api/auth/magic-link", async (
             MagicLinkRequest? request,
             AppDbContext db,
-            IEmailSender sender,
+            IEmailSender emailSender,
+            ITelegramSender telegramSender,
+            IConfiguration configuration,
             HttpContext httpContext) =>
         {
             const string responseMessage = "If an account exists, a sign-in link has been sent.";
@@ -34,7 +37,17 @@ public static class AuthEndpoints
                 return Results.Ok(new { message = responseMessage });
 
             var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-            await new RequestMagicLinkCommand(db, sender, baseUrl).ExecuteAsync(email.Address);
+
+            var telegramEnabled = !string.IsNullOrEmpty(configuration["Telegram:BotToken"]);
+            if (telegramEnabled)
+            {
+                var sent = await new RequestTelegramLoginCommand(db, telegramSender, baseUrl)
+                    .ExecuteAsync(email.Address);
+                if (sent)
+                    return Results.Ok(new { message = responseMessage, channel = "telegram" });
+            }
+
+            await new RequestMagicLinkCommand(db, emailSender, baseUrl).ExecuteAsync(email.Address);
             return Results.Ok(new { message = responseMessage });
         }).RequireRateLimiting("auth");
 

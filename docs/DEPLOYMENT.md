@@ -58,6 +58,7 @@ Settings → Secrets and variables → Actions → New repository secret.
 | `VPS_PORT` | Only if SSH is not on port 22 |
 | `TELEGRAM_BOT_TOKEN` | Talk to @BotFather on Telegram → `/newbot` |
 | `TELEGRAM_BOT_USERNAME` | Bot username from BotFather |
+| `TELEGRAM_WEBHOOK_SECRET` | `openssl rand -hex 32` — see Telegram setup below |
 | `PUSH_PUBLIC_KEY` | Run `npx web-push generate-vapid-keys` |
 | `PUSH_PRIVATE_KEY` | Same command as above |
 | `PUSH_SUBJECT` | `mailto:your@email.com` |
@@ -127,3 +128,57 @@ export POSTGRES_DB=... POSTGRES_USER=... POSTGRES_PASSWORD=...
 docker compose -f compose.vps.yml pull
 docker compose -f compose.vps.yml up -d --wait
 ```
+
+## Telegram Bot Setup (for auth + notifications)
+
+### 1. Create bot
+
+Open Telegram, talk to @BotFather:
+```
+/newbot
+```
+Follow prompts. Save:
+- **Token** → GitHub Secret `TELEGRAM_BOT_TOKEN`
+- **Username** → GitHub Secret `TELEGRAM_BOT_USERNAME`
+
+### 2. Generate webhook secret
+
+```bash
+openssl rand -hex 32
+# → e.g. a1b2c3d4e5f6...
+```
+Save as GitHub Secret `TELEGRAM_WEBHOOK_SECRET`.
+
+### 3. Register webhook (after first deploy)
+
+After the app is running on your VPS, register the webhook:
+
+```bash
+# Replace YOUR_BOT_TOKEN, YOUR_DOMAIN, and YOUR_WEBHOOK_SECRET
+curl -s "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
+  -d "url=https://YOUR_DOMAIN/api/telegram/webhook" \
+  -d "secret_token=YOUR_WEBHOOK_SECRET"
+
+# Verify it's set:
+curl -s "https://api.telegram.org/botYOUR_BOT_TOKEN/getWebhookInfo" | jq
+```
+
+### 4. How Telegram login works
+
+- User goes to login page, enters email
+- If user has Telegram connected → bot sends magic link to their Telegram chat
+- User clicks link → browser opens → logged in
+- If no Telegram connected → falls back to email
+
+User can also message the bot directly:
+```
+/login their@email.com
+```
+Bot sends login link to their chat.
+
+### 5. Connect Telegram to your account
+
+After logging in via magic link:
+- Go to Notification Settings → "Connect Telegram"
+- Opens `https://t.me/BotUsername?start=TOKEN` on phone
+- Bot receives `/start TOKEN` → links chat to account

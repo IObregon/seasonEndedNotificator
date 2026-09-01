@@ -34,6 +34,7 @@ services:
       BootstrapAdmin__Email: admin@localhost
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
       Telegram__BotUsername: ${TELEGRAM_BOT_USERNAME:-}
+      Telegram__WebhookSecret: ${TELEGRAM_WEBHOOK_SECRET:-}
       Push__PublicKey: ${PUSH_PUBLIC_KEY:-}
       Push__PrivateKey: ${PUSH_PRIVATE_KEY:-}
       Push__Subject: ${PUSH_SUBJECT:-}

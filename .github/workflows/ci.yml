@@ -147,6 +147,7 @@ jobs:
             export BOOTSTRAP_ADMIN_EMAIL=${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
             export TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
             export TELEGRAM_BOT_USERNAME=${{ secrets.TELEGRAM_BOT_USERNAME }}
+            export TELEGRAM_WEBHOOK_SECRET=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
             export PUSH_PUBLIC_KEY=${{ secrets.PUSH_PUBLIC_KEY }}
             export PUSH_PRIVATE_KEY=${{ secrets.PUSH_PRIVATE_KEY }}
             export PUSH_SUBJECT=${{ secrets.PUSH_SUBJECT }}

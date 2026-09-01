@@ -52,7 +52,9 @@ public static class NotificationEndpoints
         app.MapPost("/api/telegram/webhook", async (
             TelegramWebhookRequest? request,
             AppDbContext db,
-            IConfiguration configuration) =>
+            ITelegramSender telegramSender,
+            IConfiguration configuration,
+            HttpContext httpContext) =>
         {
             if (request is null)
                 return Results.BadRequest();
@@ -61,15 +63,36 @@ public static class NotificationEndpoints
             if (string.IsNullOrEmpty(secret) || request.Secret != secret)
                 return Results.Unauthorized();
 
-            if (request.Message?.Text is not string text || !text.StartsWith("/start "))
+            if (request.Message?.Text is not string text)
                 return Results.Ok();
 
-            var rawToken = text["/start ".Length..].Trim();
             var chatId = request.Message.Chat?.Id ?? 0;
             if (chatId == 0)
                 return Results.Ok();
 
-            await new ConsumeTelegramTokenCommand(db).ExecuteAsync(rawToken, chatId, DateTimeOffset.UtcNow);
+            if (text.StartsWith("/start "))
+            {
+                var rawToken = text["/start ".Length..].Trim();
+                await new ConsumeTelegramTokenCommand(db).ExecuteAsync(rawToken, chatId, DateTimeOffset.UtcNow);
+                return Results.Ok();
+            }
+
+            if (text.StartsWith("/login "))
+            {
+                var email = text["/login ".Length..].Trim();
+                var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+                var sent = await new RequestTelegramLoginCommand(db, telegramSender, baseUrl)
+                    .ExecuteAsync(email);
+                if (!sent)
+                    await telegramSender.SendAsync(chatId, "No account found with that email, or Telegram is not connected to that account.", CancellationToken.None);
+                return Results.Ok();
+            }
+
+            if (text == "/login")
+            {
+                await telegramSender.SendAsync(chatId, "To sign in, send: /login your@email.com", CancellationToken.None);
+            }
+
             return Results.Ok();
         });
 
