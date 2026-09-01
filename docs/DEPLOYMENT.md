@@ -41,7 +41,7 @@ Settings → Secrets and variables → Actions → New repository secret.
 
 | Secret | How to get it |
 |--------|---------------|
-| `VPS_HOST` | Run `curl ifconfig.me` on VPS, or use your domain |
+| `VPS_HOST` | `seasonendednotificator.duckdns.org` (or VPS IP) |
 | `VPS_USER` | `deploy` (from step 2 above) |
 | `VPS_SSH_KEY` | See "Generate SSH key" below |
 | `VPS_DEPLOY_PATH` | `/opt/seasonended` (from step 3 above) |
@@ -98,7 +98,7 @@ Every push to `main`:
 1. **test** — .NET tests + Vue tests + Vue build
 2. **compose-smoke** — integration test (HTTP smoke tests)
 3. **build-and-push** — build Docker image, push to GHCR with `latest` + commit SHA tags
-4. **deploy** — SCP `compose.vps.yml` to VPS, SSH in, `docker compose pull`, `docker compose up -d --wait`
+4. **deploy** — SCP `compose.vps.yml` to VPS, SSH in, `docker compose pull`, `docker compose up -d --wait`. Nginx on VPS host terminates TLS + proxies to API on `localhost:8080`.
 
 ## Manual Operations
 
