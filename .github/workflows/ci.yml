@@ -92,6 +92,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compute lowercase owner
+        id: owner
+        run: echo "lower=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -99,8 +102,8 @@ jobs:
           file: src/SeasonEnded.Api/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/seasonended-api:latest
-            ghcr.io/${{ github.repository_owner }}/seasonended-api:${{ github.sha }}
+            ghcr.io/${{ steps.owner.outputs.lower }}/seasonended-api:latest
+            ghcr.io/${{ steps.owner.outputs.lower }}/seasonended-api:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -111,6 +114,9 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      - name: Compute lowercase owner
+        id: owner
+        run: echo "lower=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Copy compose file to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -123,14 +129,17 @@ jobs:
           strip_components: 1
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
+        env:
+          GHCR_OWNER: ${{ steps.owner.outputs.lower }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          envs: GHCR_OWNER
           script: |
             cd ${{ secrets.VPS_DEPLOY_PATH }}
-            export GHCR_OWNER=${{ github.repository_owner }}
+            export GHCR_OWNER
             export IMAGE_TAG=${{ github.sha }}
             export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
@@ -141,7 +150,7 @@ jobs:
             export PUSH_PUBLIC_KEY=${{ secrets.PUSH_PUBLIC_KEY }}
             export PUSH_PRIVATE_KEY=${{ secrets.PUSH_PRIVATE_KEY }}
             export PUSH_SUBJECT=${{ secrets.PUSH_SUBJECT }}
-            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u $GHCR_OWNER --password-stdin
             docker compose -f compose.vps.yml pull
             docker compose -f compose.vps.yml up -d --wait
             docker image prune -f
