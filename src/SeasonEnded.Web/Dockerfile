@@ -9,7 +9,7 @@ RUN npm run build
 
 FROM nginx:1.29-alpine
 
-RUN apk add --no-cache openssl && \
+RUN apk add --no-cache openssl wget && \
     mkdir -p /etc/nginx/certs && \
     openssl req -x509 -nodes -days 365 \
       -newkey rsa:2048 \
