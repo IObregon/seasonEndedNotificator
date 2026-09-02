@@ -83,9 +83,9 @@ public static class NotificationEndpoints
                 var email = text["/login ".Length..].Trim();
                 var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
                 var sent = await new RequestTelegramLoginCommand(db, telegramSender, baseUrl)
-                    .ExecuteAsync(email);
+                    .ExecuteAsync(email, chatId);
                 if (!sent)
-                    await telegramSender.SendAsync(chatId, "No account found with that email, or Telegram is not connected to that account.", CancellationToken.None);
+                    await telegramSender.SendAsync(chatId, "No account found with that email.", CancellationToken.None);
                 return Results.Ok();
             }
 

@@ -22,6 +22,6 @@ public sealed class TelegramDestination
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public Guid UserId { get; init; }
-    public long ChatId { get; init; }
+    public long ChatId { get; set; }
     public DateTimeOffset ConnectedAt { get; init; } = DateTimeOffset.UtcNow;
 }
