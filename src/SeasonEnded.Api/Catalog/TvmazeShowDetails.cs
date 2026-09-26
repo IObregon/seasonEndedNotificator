@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace SeasonEnded.Api.Catalog;
 
-public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
+public sealed class TvmazeShowDetails(HttpClient client, TimeProvider timeProvider) : ITvShowDetails
 {
     public async Task<ImportedShow> GetAsync(
         int providerId,
@@ -22,17 +22,10 @@ public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
                 ParseDate(season.PremiereDate),
                 ParseDate(season.EndDate)))
             .ToList();
-        var currentSeasonNumber = importedSeasons.Count == 0
-            ? 0
-            : importedSeasons.Max(season => season.Number);
-        var currentSeasonLatestEpisodeDate = currentSeasonNumber == 0
-            ? null
-            : show.Embedded?.Episodes?
-                .Where(episode =>
-                    episode.Season == currentSeasonNumber &&
-                    episode.Type == "regular")
-                .Select(episode => ParseDate(episode.AirDate))
-                .Max();
+        var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
+        var latestFutureEpisodeDate = FindLatestFutureEpisodeDate(
+            show.Embedded?.Episodes,
+            today);
 
         return new ImportedShow(
             show.Id,
@@ -41,7 +34,7 @@ public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
             show.Status,
             show.Image?.Medium,
             importedSeasons,
-            currentSeasonLatestEpisodeDate);
+            latestFutureEpisodeDate);
     }
 
     private static int? ParseYear(string? value) =>
@@ -49,6 +42,40 @@ public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
 
     private static DateOnly? ParseDate(string? value) =>
         DateOnly.TryParse(value, out var date) ? date : null;
+
+    private static DateOnly? FindLatestFutureEpisodeDate(
+        IReadOnlyList<TvmazeEpisode>? episodes,
+        DateOnly today)
+    {
+        if (episodes is null)
+            return null;
+
+        var seasonNumbers = episodes
+            .Where(episode => episode.Type == "regular" && episode.Season > 0)
+            .Select(episode => episode.Season)
+            .Distinct()
+            .OrderByDescending(seasonNumber => seasonNumber);
+
+        foreach (var seasonNumber in seasonNumbers)
+        {
+            var dates = episodes
+                .Where(episode =>
+                    episode.Season == seasonNumber &&
+                    episode.Type == "regular")
+                .Select(episode => ParseDate(episode.AirDate))
+                .Where(date => date.HasValue)
+                .Select(date => date!.Value)
+                .ToList();
+
+            if (dates.Count == 0)
+                continue;
+
+            var futureDates = dates.Where(date => date > today).ToList();
+            return futureDates.Count == 0 ? null : futureDates.Max();
+        }
+
+        return null;
+    }
 
     private sealed record TvmazeShow(
         [property: JsonPropertyName("id")] int Id,

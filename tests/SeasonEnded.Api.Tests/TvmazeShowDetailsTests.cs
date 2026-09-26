@@ -6,6 +6,9 @@ namespace SeasonEnded.Api.Tests;
 
 public sealed class TvmazeShowDetailsTests
 {
+    private static readonly TimeProvider Time = new FixedTimeProvider(
+        new DateTimeOffset(2026, 9, 25, 0, 0, 0, TimeSpan.Zero));
+
     [Fact]
     public async Task Normalizes_show_and_excludes_season_zero()
     {
@@ -19,7 +22,7 @@ public sealed class TvmazeShowDetailsTests
                 """
         });
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.tvmaze.com") };
-        var details = new TvmazeShowDetails(client);
+        var details = new TvmazeShowDetails(client, Time);
 
         var show = await details.GetAsync(82, CancellationToken.None);
 
@@ -42,6 +45,46 @@ public sealed class TvmazeShowDetailsTests
     }
 
     [Fact]
+    public async Task Falls_back_to_previous_season_when_current_season_episodes_have_no_date()
+    {
+        var handler = new RouteHandler(new Dictionary<string, string>
+        {
+            ["/shows/82"] = """
+                {"id":82,"name":"Pending","status":"Running","premiered":"2024-01-01","_embedded":{"episodes":[{"id":1,"season":2,"type":"regular","airdate":null},{"id":2,"season":1,"type":"regular","airdate":"2026-11-01"},{"id":3,"season":1,"type":"regular","airdate":"2026-11-08"}]}}
+                """,
+            ["/shows/82/seasons"] = """
+                [{"id":10,"number":1,"premiereDate":"2024-01-01","endDate":null},{"id":11,"number":2,"premiereDate":null,"endDate":null}]
+                """
+        });
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.tvmaze.com") };
+        var details = new TvmazeShowDetails(client, Time);
+
+        var show = await details.GetAsync(82, CancellationToken.None);
+
+        Assert.Equal(new DateOnly(2026, 11, 8), show.CurrentSeasonLatestEpisodeDate);
+    }
+
+    [Fact]
+    public async Task Returns_null_when_season_episodes_are_all_aired()
+    {
+        var handler = new RouteHandler(new Dictionary<string, string>
+        {
+            ["/shows/82"] = """
+                {"id":82,"name":"Aired","status":"Running","premiered":"2020-01-01","_embedded":{"episodes":[{"id":1,"season":2,"type":"regular","airdate":"2020-06-01"},{"id":2,"season":1,"type":"regular","airdate":"2020-01-15"}]}}
+                """,
+            ["/shows/82/seasons"] = """
+                [{"id":10,"number":1,"premiereDate":"2020-01-15","endDate":"2020-05-01"},{"id":11,"number":2,"premiereDate":"2020-06-01","endDate":"2020-09-01"}]
+                """
+        });
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.tvmaze.com") };
+        var details = new TvmazeShowDetails(client, Time);
+
+        var show = await details.GetAsync(82, CancellationToken.None);
+
+        Assert.Null(show.CurrentSeasonLatestEpisodeDate);
+    }
+
+    [Fact]
     public async Task Returns_null_when_current_season_has_no_dated_episode()
     {
         var handler = new RouteHandler(new Dictionary<string, string>
@@ -54,11 +97,16 @@ public sealed class TvmazeShowDetailsTests
                 """
         });
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.tvmaze.com") };
-        var details = new TvmazeShowDetails(client);
+        var details = new TvmazeShowDetails(client, Time);
 
         var show = await details.GetAsync(82, CancellationToken.None);
 
         Assert.Null(show.CurrentSeasonLatestEpisodeDate);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     private sealed class RouteHandler(IReadOnlyDictionary<string, string> responses) : HttpMessageHandler
