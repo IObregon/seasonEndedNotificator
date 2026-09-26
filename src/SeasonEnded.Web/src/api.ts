@@ -26,6 +26,7 @@ export type FollowedShowData = {
   premiereYear: number | null
   status: string
   imageUrl: string | null
+  currentSeasonLatestEpisodeDate: string | null
   followedAt: string
 }
 

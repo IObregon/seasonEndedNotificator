@@ -45,7 +45,7 @@ public sealed class RefreshFollowedShowsCommandTests
         {
             RequestedProviderIds.Add(providerId);
             return Task.FromResult(new ImportedShow(
-                providerId, $"Show {providerId}", 2026, "Running", null, []));
+                providerId, $"Show {providerId}", 2026, "Running", null, [], null));
         }
     }
 }

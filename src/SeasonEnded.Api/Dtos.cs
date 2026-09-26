@@ -29,6 +29,7 @@ public sealed record FollowedShowResponse(
     int? PremiereYear,
     string Status,
     string? ImageUrl,
+    DateOnly? CurrentSeasonLatestEpisodeDate,
     DateTime FollowedAt);
 public sealed record MetadataIssueResponse(
     int ProviderId,

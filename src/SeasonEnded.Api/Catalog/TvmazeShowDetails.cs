@@ -10,10 +10,29 @@ public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
         CancellationToken cancellationToken)
     {
         var show = await client.GetFromJsonAsync<TvmazeShow>(
-            $"/shows/{providerId}", cancellationToken)
+            $"/shows/{providerId}?embed=episodes", cancellationToken)
             ?? throw new TvShowNotFoundException();
         var seasons = await client.GetFromJsonAsync<List<TvmazeSeason>>(
             $"/shows/{providerId}/seasons", cancellationToken) ?? [];
+        var importedSeasons = seasons
+            .Where(season => season.Number > 0)
+            .Select(season => new ImportedSeason(
+                season.Id,
+                season.Number,
+                ParseDate(season.PremiereDate),
+                ParseDate(season.EndDate)))
+            .ToList();
+        var currentSeasonNumber = importedSeasons.Count == 0
+            ? 0
+            : importedSeasons.Max(season => season.Number);
+        var currentSeasonLatestEpisodeDate = currentSeasonNumber == 0
+            ? null
+            : show.Embedded?.Episodes?
+                .Where(episode =>
+                    episode.Season == currentSeasonNumber &&
+                    episode.Type == "regular")
+                .Select(episode => ParseDate(episode.AirDate))
+                .Max();
 
         return new ImportedShow(
             show.Id,
@@ -21,14 +40,8 @@ public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
             ParseYear(show.Premiered),
             show.Status,
             show.Image?.Medium,
-            seasons
-                .Where(season => season.Number > 0)
-                .Select(season => new ImportedSeason(
-                    season.Id,
-                    season.Number,
-                    ParseDate(season.PremiereDate),
-                    ParseDate(season.EndDate)))
-                .ToList());
+            importedSeasons,
+            currentSeasonLatestEpisodeDate);
     }
 
     private static int? ParseYear(string? value) =>
@@ -42,7 +55,16 @@ public sealed class TvmazeShowDetails(HttpClient client) : ITvShowDetails
         [property: JsonPropertyName("name")] string Name,
         [property: JsonPropertyName("premiered")] string? Premiered,
         [property: JsonPropertyName("status")] string Status,
-        [property: JsonPropertyName("image")] TvmazeImage? Image);
+        [property: JsonPropertyName("image")] TvmazeImage? Image,
+        [property: JsonPropertyName("_embedded")] TvmazeEmbedded? Embedded);
+
+    private sealed record TvmazeEmbedded(
+        [property: JsonPropertyName("episodes")] IReadOnlyList<TvmazeEpisode>? Episodes);
+
+    private sealed record TvmazeEpisode(
+        [property: JsonPropertyName("season")] int Season,
+        [property: JsonPropertyName("type")] string? Type,
+        [property: JsonPropertyName("airdate")] string? AirDate);
 
     private sealed record TvmazeImage(
         [property: JsonPropertyName("medium")] string? Medium);

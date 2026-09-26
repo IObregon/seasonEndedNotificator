@@ -10,14 +10,21 @@ public sealed class Show
     public int? PremiereYear { get; set; }
     public string Status { get; set; } = "";
     public string? ImageUrl { get; set; }
+    public DateOnly? CurrentSeasonLatestEpisodeDate { get; set; }
     public List<Season> Seasons { get; } = [];
 
-    public void UpdateMetadata(string title, int? premiereYear, string status, string? imageUrl)
+    public void UpdateMetadata(
+        string title,
+        int? premiereYear,
+        string status,
+        string? imageUrl,
+        DateOnly? currentSeasonLatestEpisodeDate)
     {
         Title = title;
         PremiereYear = premiereYear;
         Status = status;
         ImageUrl = imageUrl;
+        CurrentSeasonLatestEpisodeDate = currentSeasonLatestEpisodeDate;
     }
 }
 

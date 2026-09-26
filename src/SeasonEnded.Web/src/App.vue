@@ -122,7 +122,14 @@ async function nextTick() {
             <p v-else-if="!followedShows.length">No followed shows yet.</p>
             <ul v-else>
               <li v-for="show in followedShows" :key="show.providerId">
-                <span>{{ show.title }} · {{ show.status }}</span>
+                <div class="followed-show">
+                  <span>{{ show.title }} · {{ show.status }}</span>
+                  <span class="followed-show-episode">
+                    Latest known episode date:
+                    <time v-if="show.currentSeasonLatestEpisodeDate" :datetime="show.currentSeasonLatestEpisodeDate">{{ show.currentSeasonLatestEpisodeDate }}</time>
+                    <span v-else>unavailable</span>
+                  </span>
+                </div>
                 <button type="button" @click="unfollow(show.providerId)">Unfollow</button>
               </li>
             </ul>

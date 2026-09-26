@@ -21,13 +21,15 @@ public sealed class ImportShowDetailsCommandTests
         await context.SaveChangesAsync();
         var provider = new StubDetails(new ImportedShow(
             82, "Game of Thrones", 2011, "Ended", "show.jpg",
-            [new ImportedSeason(8, 8, new DateOnly(2019, 4, 14), new DateOnly(2019, 5, 19))]));
+            [new ImportedSeason(8, 8, new DateOnly(2019, 4, 14), new DateOnly(2019, 5, 19))],
+            new DateOnly(2019, 5, 19)));
 
         var result = await new ImportShowDetailsCommand(context, provider)
             .ExecuteAsync(82, CancellationToken.None);
 
         Assert.Equal("Game of Thrones", result.Title);
         Assert.Equal("Ended", existing.Status);
+        Assert.Equal(new DateOnly(2019, 5, 19), result.CurrentSeasonLatestEpisodeDate);
         Assert.Collection(existing.Seasons, season => Assert.Equal(8, season.Number));
     }
 
@@ -35,7 +37,13 @@ public sealed class ImportShowDetailsCommandTests
     public async Task Provider_failure_preserves_existing_metadata()
     {
         await using var context = CreateContext();
-        var existing = new Show { ProviderId = 82, Title = "Stored title", Status = "Running" };
+        var existing = new Show
+        {
+            ProviderId = 82,
+            Title = "Stored title",
+            Status = "Running",
+            CurrentSeasonLatestEpisodeDate = new DateOnly(2019, 5, 19)
+        };
         context.Shows.Add(existing);
         await context.SaveChangesAsync();
         var provider = new StubDetails(new TvShowNotFoundException());
@@ -45,6 +53,7 @@ public sealed class ImportShowDetailsCommandTests
 
         Assert.Equal("Stored title", existing.Title);
         Assert.Equal("Running", existing.Status);
+        Assert.Equal(new DateOnly(2019, 5, 19), existing.CurrentSeasonLatestEpisodeDate);
     }
 
     [Fact]
@@ -69,7 +78,8 @@ public sealed class ImportShowDetailsCommandTests
 
         var provider = new StubDetails(new ImportedShow(
             82, "Game of Thrones", 2011, "Ended", "show.jpg",
-            [new ImportedSeason(8, 8, new DateOnly(2019, 4, 14), new DateOnly(2019, 5, 19))]));
+            [new ImportedSeason(8, 8, new DateOnly(2019, 4, 14), new DateOnly(2019, 5, 19))],
+            new DateOnly(2019, 5, 19)));
 
         var result = await new ImportShowDetailsCommand(context, provider)
             .ExecuteAsync(82, CancellationToken.None);
@@ -77,6 +87,7 @@ public sealed class ImportShowDetailsCommandTests
         Assert.Single(result.Seasons);
         Assert.Equal(completedAt, result.Seasons.First().CompletedAt);
         Assert.Equal(new DateOnly(2019, 4, 14), result.Seasons.First().PremiereDate);
+        Assert.Equal(new DateOnly(2019, 5, 19), result.CurrentSeasonLatestEpisodeDate);
     }
 
     private static AppDbContext CreateContext() => new(

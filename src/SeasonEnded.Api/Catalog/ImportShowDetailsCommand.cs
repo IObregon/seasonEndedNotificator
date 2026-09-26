@@ -27,7 +27,12 @@ public sealed class ImportShowDetailsCommand(
             context.Shows.Add(show);
         }
 
-        show.UpdateMetadata(imported.Title, imported.PremiereYear, imported.Status, imported.ImageUrl);
+        show.UpdateMetadata(
+            imported.Title,
+            imported.PremiereYear,
+            imported.Status,
+            imported.ImageUrl,
+            imported.CurrentSeasonLatestEpisodeDate);
 
         var existingByProviderId = existingSeasons.ToDictionary(s => s.ProviderSeasonId);
         var importedIds = imported.Seasons.Select(s => s.ProviderSeasonId).ToHashSet();

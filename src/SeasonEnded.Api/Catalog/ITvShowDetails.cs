@@ -11,7 +11,8 @@ public sealed record ImportedShow(
     int? PremiereYear,
     string Status,
     string? ImageUrl,
-    IReadOnlyList<ImportedSeason> Seasons);
+    IReadOnlyList<ImportedSeason> Seasons,
+    DateOnly? CurrentSeasonLatestEpisodeDate);
 
 public sealed record ImportedSeason(
     int ProviderSeasonId,

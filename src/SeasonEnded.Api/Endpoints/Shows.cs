@@ -121,6 +121,7 @@ public static class ShowEndpoints
                     x.show.PremiereYear,
                     x.show.Status,
                     x.show.ImageUrl,
+                    x.show.CurrentSeasonLatestEpisodeDate,
                     x.follow.FollowedAt))
                 .ToListAsync();
 

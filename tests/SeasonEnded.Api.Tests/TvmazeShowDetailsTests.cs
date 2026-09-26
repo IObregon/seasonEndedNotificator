@@ -12,7 +12,7 @@ public sealed class TvmazeShowDetailsTests
         var handler = new RouteHandler(new Dictionary<string, string>
         {
             ["/shows/82"] = """
-                {"id":82,"name":"Game of Thrones","status":"Ended","premiered":"2011-04-17","image":{"medium":"show.jpg"}}
+                {"id":82,"name":"Game of Thrones","status":"Ended","premiered":"2011-04-17","image":{"medium":"show.jpg"},"_embedded":{"episodes":[{"id":1,"season":1,"type":"regular","airdate":"2011-06-19"},{"id":2,"season":2,"type":"regular","airdate":"2026-10-06"},{"id":3,"season":2,"type":"regular","airdate":"2026-10-13"},{"id":4,"season":2,"type":"special","airdate":"2027-01-01"},{"id":5,"season":0,"type":"regular","airdate":"2028-01-01"}]}}
                 """,
             ["/shows/82/seasons"] = """
                 [{"id":1,"number":0,"premiereDate":"2010-01-01","endDate":"2010-01-02"},{"id":2,"number":1,"premiereDate":"2011-04-17","endDate":"2011-06-19"},{"id":3,"number":2,"premiereDate":null,"endDate":null}]
@@ -25,6 +25,7 @@ public sealed class TvmazeShowDetailsTests
 
         Assert.Equal("Game of Thrones", show.Title);
         Assert.Equal(2011, show.PremiereYear);
+        Assert.Equal(new DateOnly(2026, 10, 13), show.CurrentSeasonLatestEpisodeDate);
         Assert.Collection(show.Seasons,
             season =>
             {
@@ -38,6 +39,26 @@ public sealed class TvmazeShowDetailsTests
                 Assert.Null(season.PremiereDate);
                 Assert.Null(season.EndDate);
             });
+    }
+
+    [Fact]
+    public async Task Returns_null_when_current_season_has_no_dated_episode()
+    {
+        var handler = new RouteHandler(new Dictionary<string, string>
+        {
+            ["/shows/82"] = """
+                {"id":82,"name":"Game of Thrones","status":"Running","premiered":"2011-04-17","_embedded":{"episodes":[{"id":1,"season":2,"type":"regular","airdate":"2017-07-16"}]}}
+                """,
+            ["/shows/82/seasons"] = """
+                [{"id":2,"number":1,"premiereDate":"2011-04-17","endDate":"2011-06-19"},{"id":3,"number":2,"premiereDate":null,"endDate":null},{"id":4,"number":3,"premiereDate":null,"endDate":null}]
+                """
+        });
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.tvmaze.com") };
+        var details = new TvmazeShowDetails(client);
+
+        var show = await details.GetAsync(82, CancellationToken.None);
+
+        Assert.Null(show.CurrentSeasonLatestEpisodeDate);
     }
 
     private sealed class RouteHandler(IReadOnlyDictionary<string, string> responses) : HttpMessageHandler

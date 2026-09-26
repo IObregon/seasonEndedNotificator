@@ -12,9 +12,9 @@ watch(() => props.show.providerId, () => {
 
 async function follow() {
   followed.value = true
-  emit('followed')
   try {
     await api.followShow(props.show.providerId)
+    emit('followed')
   } catch {
     followed.value = false
   }
